@@ -4,22 +4,25 @@ import numpy as np
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
-MODEL_DIR = "./../modelisation/camembert_valdataset"
+MODEL_DIR = "./../../models/camembert"
 
 
 class Predictor:
 
     def __init__(self):
+        print("Chargement du tokenizer...")
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
+        print("Chargement du modèle...")
         self.model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
         self.thresholds = self.model.config.thresholds
         self.labels = self.model.config.label_names
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"Envoi du modèle sur {self.device}...")
         self.model.to(self.device)
         self.model.eval()
 
-        print("Model loaded")
+        print("Modèle chargé")
 
     def predict(self, texts):
 
