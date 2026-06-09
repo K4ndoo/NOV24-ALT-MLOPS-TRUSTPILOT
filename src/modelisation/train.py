@@ -52,8 +52,8 @@ def pack_labels(batch):
     return batch
 
 def prepare(ds):
-    ds = ds.map(tokenize,     batched=True, num_proc=4) # parallélisation CPU
-    ds = ds.map(pack_labels,  batched=True, num_proc=4)
+    ds = ds.map(tokenize,     batched=True, num_proc=4) # num_proc=1 si sur Windows ou si problèmes de multiprocessing
+    ds = ds.map(pack_labels,  batched=True, num_proc=4) # num_proc=1 si sur Windows ou si problèmes de multiprocessing
     ds = ds.remove_columns(LABEL_COLS + [TEXT_COL])
     ds.set_format("torch")
     return ds
@@ -96,14 +96,14 @@ training_args = TrainingArguments(
 
     # Hyperparamètres
     learning_rate=2e-5,
-    per_device_train_batch_size=16,
+    per_device_train_batch_size=16, # à ajuster selon la RAM disponible
     per_device_eval_batch_size=32,
     num_train_epochs=10,
     weight_decay=0.01,
 
     # Vitesse
     fp16=USE_FP16, 
-    dataloader_num_workers=4,
+    dataloader_num_workers=4, # mettre à 0 si sur Windows ou si problèmes de multiprocessing
     # Logging
     logging_strategy="epoch",
     report_to="none",
