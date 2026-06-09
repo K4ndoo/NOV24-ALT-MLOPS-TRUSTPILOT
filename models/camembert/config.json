@@ -38,9 +38,9 @@
   "pad_token_id": 1,
   "problem_type": "multi_label_classification",
   "thresholds": [
-    0.4299999999999998,
-    0.4999999999999998,
-    0.3999999999999998
+    0.44999999999999984,
+    0.46999999999999986,
+    0.7399999999999997
   ],
   "tie_word_embeddings": true,
   "transformers_version": "5.10.2",

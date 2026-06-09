@@ -1,15 +1,19 @@
-import torch
 import numpy as np
 
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-
-
-MODEL_DIR = "./../../models/camembert"
+MODEL_DIR = "models/camembert"
 
 
 class Predictor:
-
     def __init__(self):
+        self.model = None
+        self.tokenizer = None
+        self.device = None
+        self.thresholds = None
+        self.labels = None
+
+    def load(self):
+        import torch
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
         print("Chargement du tokenizer...")
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
         print("Chargement du modèle...")
@@ -25,7 +29,11 @@ class Predictor:
         print("Modèle chargé")
 
     def predict(self, texts):
-
+        import torch
+        
+        if self.model is None:
+            raise RuntimeError("Le modèle n'est pas chargé. L'API a-t-elle bien démarré ?")
+        
         # Tokenisation batch
         inputs = self.tokenizer(
             texts,
