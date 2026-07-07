@@ -93,8 +93,9 @@ def evaluate(name, df):
 df_main = pd.read_csv('data/labelled_dataset/dataset_avis.csv')
 df_gold = pd.read_csv('data/test_dataset/100_avis_annote.csv', sep=";")
 
-from sklearn.model_selection import train_test_split
-_, df_test = train_test_split(df_main, test_size=0.2, random_state=42)
+dataset = Dataset.from_pandas(df_main[[TEXT_COL] + LABEL_COLS])
+dataset = dataset.train_test_split(test_size=0.2, seed=42)
+df_test = dataset["test"].to_pandas()
 
 
 # EVALUATION
