@@ -7,6 +7,10 @@ from src.api.predict import predictor
 from pydantic import BaseModel
 from typing import List, Dict
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import torch
 from mlflow.tracking.client import MlflowClient
 
@@ -92,7 +96,8 @@ def model_info(api_key: str = Depends(get_api_key)):
 @api.get("/model/metrics")
 def model_metrics(limit: int = 1, api_key: str = Depends(get_api_key)):
     try:
-        client = MlflowClient(tracking_uri="sqlite:///mlflow.db")
+        tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
+        client = MlflowClient(tracking_uri=tracking_uri)
         experiment = client.get_experiment_by_name("TrustPilot_CamemBERT_Classification")
         if not experiment:
             return {"error": "Expérience MLflow introuvable"}

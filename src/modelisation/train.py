@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import torch
 import mlflow
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from transformers import (
     Trainer,
@@ -16,7 +20,7 @@ from sklearn.metrics import f1_score
 
 
 # CONFIGURATION
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
 mlflow.set_experiment("TrustPilot_CamemBERT_Classification")
 
 MODEL_NAME = "camembert-base"
