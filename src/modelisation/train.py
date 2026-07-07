@@ -196,6 +196,12 @@ def main():
         model.save_pretrained(OUTPUT_DIR)
         tokenizer.save_pretrained(OUTPUT_DIR)
 
+        # Nettoyage des checkpoints intermédiaires très lourds (450Mo chacun) générés par HuggingFace sinon ca faisait lourd de tout envoyé sur dagshub
+        import shutil
+        import glob
+        for checkpoint_dir in glob.glob(f"{OUTPUT_DIR}/checkpoint-*"):
+            shutil.rmtree(checkpoint_dir)
+
         # sauvegarde de l'artefact complet dans MLflow
         mlflow.log_artifacts(OUTPUT_DIR, artifact_path="camembert_model")
 
