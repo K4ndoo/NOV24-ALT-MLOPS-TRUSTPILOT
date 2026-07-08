@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from pathlib import Path
 from transformers import (
     Trainer,
     TrainingArguments,
@@ -20,15 +21,23 @@ MODEL_NAME = "camembert-base"
 TEXT_COL = "clean_comment"
 LABEL_COLS = ["qualité produit", "service livraison", "service client"]
 
-OUTPUT_DIR = "./../../models/camembert"
+#OUTPUT_DIR = "./../../models/camembert"
+BASE_DIR = Path(__file__).resolve().parents[2]
 
+OUTPUT_DIR = BASE_DIR / "models" / "camembert"
 USE_FP16 = torch.cuda.is_available() # demi-précision automatique si GPU dispo
 
 
 # LOAD DATA
 
-df = pd.read_csv('./../../data/labelled_dataset/dataset_avis.csv')
+#df = pd.read_csv('./../../data/labelled_dataset/dataset_avis.csv')
+from pathlib import Path
 
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+DATA_PATH = BASE_DIR / "data" / "labelled_dataset" / "dataset_avis.csv"
+
+df = pd.read_csv(DATA_PATH)
 dataset = Dataset.from_pandas(df[[TEXT_COL] + LABEL_COLS])
 
 dataset = dataset.train_test_split(test_size=0.2,  seed=42)

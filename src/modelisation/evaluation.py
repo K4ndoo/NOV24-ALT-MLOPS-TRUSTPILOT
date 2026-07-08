@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding
 from datasets import Dataset
 from torch.utils.data import DataLoader
@@ -10,7 +11,10 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 # CONFIG
 
-MODEL_DIR = "./../../models/camembert"
+#MODEL_DIR = "./../../models/camembert"
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+MODEL_DIR = BASE_DIR / "models" / "camembert"
 TEXT_COL = "clean_comment"
 BATCH_SIZE = 32
 
@@ -90,8 +94,16 @@ def evaluate(name, df):
 
 # LOAD DATASETS
 
-df_main = pd.read_csv('./../../data/labelled_dataset/dataset_avis.csv')
-df_gold = pd.read_csv('./../../data/test_dataset/100_avis_annote.csv', sep=";")
+#df_main = pd.read_csv('./../../data/labelled_dataset/dataset_avis.csv')
+#df_gold = pd.read_csv('./../../data/test_dataset/100_avis_annote.csv', sep=";")
+df_main = pd.read_csv(
+    BASE_DIR / "data" / "labelled_dataset" / "dataset_avis.csv"
+)
+
+df_gold = pd.read_csv(
+    BASE_DIR / "data" / "test_dataset" / "100_avis_annote.csv",
+    sep=";"
+)
 
 from sklearn.model_selection import train_test_split
 _, df_test = train_test_split(df_main, test_size=0.2, random_state=42)
