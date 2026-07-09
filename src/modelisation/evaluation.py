@@ -7,6 +7,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, Data
 from datasets import Dataset
 from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 
 
 # CONFIG
@@ -105,8 +106,10 @@ df_gold = pd.read_csv(
     sep=";"
 )
 
-from sklearn.model_selection import train_test_split
-_, df_test = train_test_split(df_main, test_size=0.2, random_state=42)
+
+dataset = Dataset.from_pandas(df_main[[TEXT_COL] + LABEL_COLS])
+dataset = dataset.train_test_split(test_size=0.2, seed=42)
+df_test = dataset["test"].to_pandas()
 
 
 # EVALUATION

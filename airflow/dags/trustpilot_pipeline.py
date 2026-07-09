@@ -18,9 +18,9 @@ with DAG(
     train_model = BashOperator(
         task_id="train_model",
         bash_command=f"""
-        echo "Training task started"
-    	sleep 10
-    	echo "Training task finished"
+        cd {PROJECT_DIR}
+    	source .venv/bin/activate
+    	python src/modelisation/train.py
     	"""
     )
 
@@ -29,7 +29,7 @@ with DAG(
         task_id="evaluate_model",
         bash_command=f"""
         cd {PROJECT_DIR}
-        source ../../.venv/bin/activate
+        source .venv/bin/activate
         python src/modelisation/evaluation.py
         """
     )
