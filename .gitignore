@@ -1,6 +1,12 @@
 venv/
 .venv/
 __pycache__/
+<<<<<<< HEAD
 *.pyc
 models/
 .env
+=======
+models/
+mlruns/
+.env
+>>>>>>> quentin/main

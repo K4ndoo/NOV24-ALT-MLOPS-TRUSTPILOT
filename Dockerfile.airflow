@@ -1,0 +1,20 @@
+FROM apache/airflow:2.9.2
+
+USER root
+
+# installation des dépendances système 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+         build-essential \
+  && apt-get autoremove -yqq --purge \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+USER airflow
+
+# Copie des requirements
+COPY requirements.txt /tmp/requirements.txt
+
+# Installation des librairies Python (on ajoute aussi la version CPU de PyTorch pour que le script de train tourne sans GPU)
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
