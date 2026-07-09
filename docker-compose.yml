@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # FastAPI
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: trustpilot_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./.env:/app/.env
+    environment:
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+
+  # Airflow
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: trustpilot_airflow
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/opt/airflow/src
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./.env:/opt/airflow/.env
+    # On initialise la base de données et on force la création de l'utilisateur admin/admin AVANT de lancer standalone
+    command: >
+      bash -c "
+      airflow db migrate && 
+      airflow users create -u admin -p admin -f Admin -l User -r Admin -e admin@example.com || true && 
+      airflow standalone
+      "
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}

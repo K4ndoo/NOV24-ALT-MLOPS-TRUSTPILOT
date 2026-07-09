@@ -64,6 +64,12 @@ def main():
     # LOAD DATA
     df = pd.read_csv('data/labelled_dataset/dataset_avis.csv')
 
+    # MODE DÉMO (Pour la soutenance)
+    FAST_TRACK = os.getenv("FAST_TRACK", "false").lower() == "true"
+    if FAST_TRACK:
+        print("MODE FAST_TRACK ACTIVÉ : Entraînement sur 50 exemples (Démo) !")
+        df = df.head(50)
+
     dataset = Dataset.from_pandas(df[[TEXT_COL] + LABEL_COLS])
 
     dataset = dataset.train_test_split(test_size=0.2,  seed=42)
@@ -103,16 +109,19 @@ def main():
 
             # Hyperparamètres
             learning_rate=2e-5,
-            per_device_train_batch_size=16,
-            per_device_eval_batch_size=32,
-            num_train_epochs=10,
+            per_device_train_batch_size=8,
+            per_device_eval_batch_size=8,
+            num_train_epochs=1 if FAST_TRACK else 10,
             weight_decay=0.01,
+            
+            # Affichage dans Airflow (force HuggingFace à écrire des logs texte souvent)
+            logging_strategy="steps",
+            logging_steps=10 if not FAST_TRACK else 2,
 
             # Vitesse
             fp16=USE_FP16, 
             dataloader_num_workers=4, # mettre à 0 si sur Windows ou si problèmes de multiprocessing
             # Logging
-            logging_strategy="epoch",
             report_to="none",
         )
 
