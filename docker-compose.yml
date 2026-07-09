@@ -12,6 +12,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./.env:/app/.env
+      - ./models:/app/models
     environment:
       - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
@@ -30,6 +31,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./data:/opt/airflow/data
       - ./.env:/opt/airflow/.env
+      - ./models:/opt/airflow/models
     # On initialise la base de données et on force la création de l'utilisateur admin/admin AVANT de lancer standalone
     command: >
       bash -c "
