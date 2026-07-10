@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 import mlflow
 import os
+import tempfile
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,8 +27,6 @@ mlflow.set_experiment("TrustPilot_CamemBERT_Classification")
 MODEL_NAME = "camembert-base"
 TEXT_COL = "clean_comment"
 LABEL_COLS = ["qualité produit", "service livraison", "service client"]
-
-OUTPUT_DIR = "models/camembert"
 
 USE_FP16 = torch.cuda.is_available() # demi-précision automatique si GPU dispo
 
@@ -72,8 +71,9 @@ def main():
 
     dataset = Dataset.from_pandas(df[[TEXT_COL] + LABEL_COLS])
 
+    # Le split de test n'est pas utilisé ici : il est reconstruit (même seed) et évalué
+    # indépendamment par evaluation.py, qui est seul responsable du calcul des métriques.
     dataset = dataset.train_test_split(test_size=0.2,  seed=42)
-    test_ds = dataset["test"]
     dataset = dataset["train"].train_test_split(test_size=0.15, seed=42)
     train_ds = dataset["train"]
     val_ds = dataset["test"]
@@ -82,7 +82,6 @@ def main():
     # TOKENISATION
     train_ds = prepare(train_ds)
     val_ds = prepare(val_ds)
-    test_ds = prepare(test_ds)
 
     data_collator = DataCollatorWithPadding(tokenizer)
 
@@ -96,10 +95,10 @@ def main():
 
 
     # TRAINING & MLFLOW TRACKING
-    with mlflow.start_run(run_name="Camembert_Base_Run1"):
+    with mlflow.start_run(run_name="Camembert_Base_Run1"), tempfile.TemporaryDirectory() as tmp_dir:
 
         training_args = TrainingArguments(
-            output_dir=OUTPUT_DIR,
+            output_dir=tmp_dir,
 
             # Évaluation & sauvegarde
             eval_strategy="epoch",
@@ -113,13 +112,13 @@ def main():
             per_device_eval_batch_size=8,
             num_train_epochs=1 if FAST_TRACK else 10,
             weight_decay=0.01,
-            
+
             # Affichage dans Airflow (force HuggingFace à écrire des logs texte souvent)
             logging_strategy="steps",
             logging_steps=10 if not FAST_TRACK else 2,
 
             # Vitesse
-            fp16=USE_FP16, 
+            fp16=USE_FP16,
             dataloader_num_workers=4, # mettre à 0 si sur Windows ou si problèmes de multiprocessing
             # Logging
             report_to="none",
@@ -150,7 +149,7 @@ def main():
         # FIND BEST THRESHOLDS
         predictions = trainer.predict(val_ds)
         val_logits = predictions.predictions
-        val_labels = predictions.label_ids 
+        val_labels = predictions.label_ids
         val_probs = 1 / (1 + np.exp(-val_logits))
 
         thresholds = np.arange(0.1, 0.91, 0.01)
@@ -165,56 +164,31 @@ def main():
             best_thresholds.append(float(thresholds[np.argmax(f1_scores)]))
 
         print("Best thresholds:", best_thresholds)
-        
+
         # on log les thresholds dans MLflow
         for i, col in enumerate(LABEL_COLS):
             mlflow.log_metric(f"threshold_{col}", best_thresholds[i])
 
 
-        # ÉVALUATION FINALE SUR LE JEU DE TEST
-        test_predictions = trainer.predict(test_ds)
-        test_logits = test_predictions.predictions
-        test_labels = test_predictions.label_ids
-        test_probs = 1 / (1 + np.exp(-test_logits))
+        # Nettoyage des checkpoints intermédiaires très lourds (450Mo chacun) générés par HuggingFace
+        # pendant l'entraînement, sinon ils se retrouvent dans l'artefact loggé dans MLflow
+        import shutil
+        import glob
+        for checkpoint_dir in glob.glob(f"{tmp_dir}/checkpoint-*"):
+            shutil.rmtree(checkpoint_dir)
 
-        test_preds = np.stack(
-            [(test_probs[:, i] > best_thresholds[i]).astype(int) for i in range(len(LABEL_COLS))],
-            axis=1,
-        )
-
-        test_f1_micro = f1_score(test_labels, test_preds, average="micro",  zero_division=0)
-        test_f1_macro = f1_score(test_labels, test_preds, average="macro",  zero_division=0)
-
-        print("Test F1 micro:", test_f1_micro)
-        print("Test F1 macro:", test_f1_macro)
-        for i, col in enumerate(LABEL_COLS):
-            print(f"  {col}: F1 = {f1_score(test_labels[:, i], test_preds[:, i], zero_division=0):.3f}")
-
-        # on log les métriques globales dans MLflow
-        mlflow.log_metrics({
-            "test_f1_micro": test_f1_micro,
-            "test_f1_macro": test_f1_macro
-        })
-
-
-        # SAVE MODEL + THRESHOLDS
+        # SAVE MODEL + THRESHOLDS (candidat : uniquement dans MLflow. L'évaluation (test split + Gold)
+        # est faite par evaluation.py, et la promotion vers models/camembert + DVC par deploy.py)
         model.config.thresholds = best_thresholds
         model.config.label_names = LABEL_COLS
 
-        # sauvegarde locale classique
-        model.save_pretrained(OUTPUT_DIR)
-        tokenizer.save_pretrained(OUTPUT_DIR)
+        model.save_pretrained(tmp_dir)
+        tokenizer.save_pretrained(tmp_dir)
 
-        # Nettoyage des checkpoints intermédiaires très lourds (450Mo chacun) générés par HuggingFace sinon ca faisait lourd de tout envoyé sur dagshub
-        import shutil
-        import glob
-        for checkpoint_dir in glob.glob(f"{OUTPUT_DIR}/checkpoint-*"):
-            shutil.rmtree(checkpoint_dir)
+        mlflow.log_artifacts(tmp_dir, artifact_path="camembert_model")
 
-        # sauvegarde de l'artefact complet dans MLflow
-        mlflow.log_artifacts(OUTPUT_DIR, artifact_path="camembert_model")
-
-    print(f"\nModèle sauvegardé dans : {OUTPUT_DIR}")
+    print("\nEntraînement terminé. Modèle candidat loggé dans MLflow.")
+    print("Lance evaluation.py puis deploy.py pour évaluer et éventuellement promouvoir ce candidat.")
 
 if __name__ == "__main__":
     main()

@@ -48,16 +48,10 @@ with DAG(
         bash_command='cd /opt/airflow && python src/modelisation/evaluation.py',
     )
 
-    # Tâche 4 : Simulation du déploiement
-    def _deploy():
-        print("[SIMULATION] Lecture du meilleur modèle depuis DagsHub...")
-        print("[SIMULATION] Redémarrage de l'API avec les nouveaux poids !")
-        print("[SIMULATION] Déploiement terminé avec succès.")
-        return True
-
-    deploy_api = PythonOperator(
+    # Tâche 4 : Décide si le candidat est meilleur que le modèle en place, et le déploie (DVC) si oui
+    deploy_api = BashOperator(
         task_id='deploy_new_model_to_api',
-        python_callable=_deploy,
+        bash_command='cd /opt/airflow && python src/modelisation/deploy.py',
     )
 
     # Ordre d'exécution du pipeline

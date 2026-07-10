@@ -1,0 +1,5 @@
+[core]
+    remote = origin
+['remote "origin"']
+    url = https://dagshub.com/georges.quentin77/NOV24-ALT-MLOPS-TRUSTPILOT.dvc
+    auth = basic

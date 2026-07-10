@@ -1,0 +1,6 @@
+outs:
+- md5: eac4dc0735e0479e15a21765a7fc4871.dir
+  size: 444627172
+  nfiles: 4
+  hash: md5
+  path: camembert

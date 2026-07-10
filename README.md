@@ -54,7 +54,7 @@ pip install -r requirements.txt
 
 ### Lancer l'entraînement manuel
 ```bash
-python src/modelisation/train.py
+python src/modelisation_manuelle/train.py
 ```
 *(Le modèle final sera sauvegardé dans `models/camembert` et uploadé sur DagsHub).*
 
