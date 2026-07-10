@@ -42,7 +42,13 @@ with DAG(
         bash_command='export FAST_TRACK=true && cd /opt/airflow && python src/modelisation/train.py',
     )
 
-    # Tâche 3 : Simulation du déploiement
+    # Tâche 3 : Évaluation du modèle entraîné
+    evaluate_model = BashOperator(
+        task_id='evaluate_camembert_model',
+        bash_command='cd /opt/airflow && python src/modelisation/evaluation.py',
+    )
+
+    # Tâche 4 : Simulation du déploiement
     def _deploy():
         print("[SIMULATION] Lecture du meilleur modèle depuis DagsHub...")
         print("[SIMULATION] Redémarrage de l'API avec les nouveaux poids !")
@@ -55,4 +61,4 @@ with DAG(
     )
 
     # Ordre d'exécution du pipeline
-    check_new_data >> retrain_model >> deploy_api
+    check_new_data >> retrain_model >> evaluate_model >> deploy_api
