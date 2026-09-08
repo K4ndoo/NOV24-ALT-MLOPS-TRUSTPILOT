@@ -65,3 +65,4 @@ SQLAlchemy<2.0.0
 accelerate>=1.1.0
 python-dotenv
 setuptools<81
+pyOpenSSL>=24.0.0
