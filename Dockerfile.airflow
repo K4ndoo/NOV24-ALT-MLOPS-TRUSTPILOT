@@ -18,3 +18,11 @@ COPY requirements.txt /tmp/requirements.txt
 # Installation des librairies Python (on ajoute aussi la version CPU de PyTorch pour que le script de train tourne sans GPU)
 RUN pip install --no-cache-dir -r /tmp/requirements.txt \
     && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+USER root
+# Installation des dépendances système Chromium via le binaire playwright de l'utilisateur airflow
+RUN PATH="/home/airflow/.local/bin:$PATH" playwright install-deps chromium
+
+USER airflow
+# Installation des navigateurs
+RUN playwright install chromium
