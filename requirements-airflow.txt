@@ -1,0 +1,10 @@
+numpy
+pandas
+torch
+mlflow
+python-dotenv
+transformers
+datasets
+scikit-learn
+dvc
+accelerate
