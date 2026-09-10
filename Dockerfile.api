@@ -9,11 +9,11 @@ WORKDIR /app
 # on copie uniquement les requirements d'abord (pour optimiser le cache Docker)
 COPY requirements.txt .
 
-# on installe les librairies
-RUN pip install --no-cache-dir -r requirements.txt
+# on installe PyTorch en premier (Version CPU pour éviter que requirements.txt ne télécharge la version GPU énorme de ~5GB)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-# on installe PyTorch
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# on installe les autres librairies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # On copie tout
 COPY . .

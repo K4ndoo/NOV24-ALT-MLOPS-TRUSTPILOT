@@ -13,9 +13,16 @@ RUN apt-get update \
 USER airflow
 
 # Copie des requirements
-COPY requirements-airflow.txt /tmp/requirements-airflow.txt
+COPY requirements.txt /tmp/requirements.txt
 
+# Installation des librairies Python (on installe la version CPU de PyTorch en premier pour éviter que requirements.txt ne télécharge la version GPU énorme de ~5GB)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Installation des librairies Python (on ajoute aussi la version CPU de PyTorch pour que le script de train tourne sans GPU)
-RUN pip install --no-cache-dir -r /tmp/requirements-airflow.txt \
-    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+USER root
+# Installation des dépendances système Chromium via le binaire playwright de l'utilisateur airflow
+RUN PATH="/home/airflow/.local/bin:$PATH" playwright install-deps chromium
+
+USER airflow
+# Installation des navigateurs
+RUN playwright install chromium
