@@ -66,3 +66,6 @@ accelerate>=1.1.0
 python-dotenv
 setuptools<81
 pyOpenSSL>=24.0.0
+curl_cffi==0.7.3
+beautifulsoup4==4.12.3
+playwright

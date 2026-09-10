@@ -63,6 +63,24 @@ def main():
     # LOAD DATA
     df = pd.read_csv('data/labelled_dataset/dataset_avis.csv')
 
+    # PRÉ-PROCESSING DES NOUVEAUX AVIS (SCRAPING)
+    import re
+    def clean_text(text):
+        if pd.isna(text):
+            return ""
+        text = str(text).lower().strip()
+        text = re.sub(r"(http|www)\S+", "", text) # URLs
+        text = re.sub(r"\S+@\S+", "", text) # emails
+        text = re.sub(r"(@|#)\w+", "", text) # mentions @ et #
+        text = re.sub(r"\s+", " ", text).strip() # espaces multiples
+        return text
+
+    mask = df['clean_comment'].isna() | (df['clean_comment'] == "")
+    if mask.any():
+        df.loc[mask, 'clean_comment'] = df.loc[mask, 'Commentaire'].apply(clean_text)
+        # On sauvegarde le dataset pour que evaluation.py puisse lire les textes nettoyés
+        df.to_csv('data/labelled_dataset/dataset_avis.csv', index=False)
+
     # MODE DÉMO (Pour la soutenance)
     FAST_TRACK = os.getenv("FAST_TRACK", "false").lower() == "true"
     if FAST_TRACK:
@@ -132,6 +150,9 @@ def main():
             "weight_decay": training_args.weight_decay,
             "model_name": MODEL_NAME
         })
+        
+        # Log de la taille du dataset pour suivre son enrichissement via le scraper
+        mlflow.log_metric("dataset_size", len(df))
 
         trainer = Trainer(
             model=model,
