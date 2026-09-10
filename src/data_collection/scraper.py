@@ -4,6 +4,7 @@ import time
 import random
 import os
 import argparse
+from datetime import datetime
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
@@ -14,18 +15,28 @@ TOPICS = {
     'product': 'qualité produit'
 }
 
-# les entreprises à scraper et leur domaine
-COMPANIES = [
-    {'domain': 'www.showroomprive.com', 'name': 'ShowRoom'},
-    {'domain': 'www.veepee.fr', 'name': 'VeePee'}
-]
-
-DATASET_PATH = 'data/labelled_dataset/dataset_avis.csv'
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--max_pages', type=int, default=5, help='Maximum number of pages to scrape per category')
+    parser.add_argument('--preset', type=str, default='training', choices=['training', 'inference'], help='Preset to use for scraping')
     args = parser.parse_args()
+    
+    if args.preset == 'training':
+        COMPANIES = [
+            {'domain': 'www.showroomprive.com', 'name': 'ShowRoom'},
+            {'domain': 'www.veepee.fr', 'name': 'VeePee'}
+        ]
+        DATASET_PATH = 'data/labelled_dataset/dataset_avis.csv'
+    else:
+        COMPANIES = [
+            {'domain': 'www.laredoute.fr', 'name': 'LaRedoute'},
+            {'domain': 'www.zalando.fr', 'name': 'Zalando'},
+            {'domain': 'www.backmarket.fr', 'name': 'BlackMarket'},  
+        ]
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        DATASET_PATH = f'data/daily_inference/dataset_inference_{current_date}.csv'
+    
+    os.makedirs(os.path.dirname(DATASET_PATH), exist_ok=True)
     
     if os.path.exists(DATASET_PATH):
         df = pd.read_csv(DATASET_PATH)
