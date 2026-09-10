@@ -40,3 +40,4 @@ jobs:
           file: ./Dockerfile.airflow
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/nov24-alt-mlops-trustpilot-airflow:latest
+          
