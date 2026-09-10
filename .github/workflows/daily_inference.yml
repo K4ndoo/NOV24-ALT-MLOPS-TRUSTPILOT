@@ -2,8 +2,8 @@ name: Daily Inference Pipeline
 
 on:
   schedule:
-    - cron: '0 8 * * *' # Tous les jours à 8h00 du matin
-  workflow_dispatch: # pour lancer manuellement si on veut essayer
+    - cron: '14 8 * * *' # Tous les jours vers 8h14 du matin
+  workflow_dispatch: # Pour le lancer manuellement
 
 jobs:
   inference:
@@ -43,10 +43,10 @@ jobs:
         # On télécharge uniquement le dossier du modèle pour gagner du temps
         run: dvc pull models/camembert.dvc
         
-      - name: 1. Scraper les nouveaux avis
+      - name: 1. Scraper de nouvelles données (La Redoute)
         run: python -u src/data_collection/scraper.py --preset inference
         
-      - name: 2. Inférence & Evaluation
+      - name: 2. Inférence & Shadow Evaluation
         run: python -u src/modelisation/daily_inference.py
         
       - name: Sauvegarder les données quotidiennes sur DagsHub
