@@ -25,7 +25,7 @@ jobs:
         run: playwright install chromium
         
       - name: Lancer le scraper (Mode Test 1 page)
-        run: python src/data_collection/scraper.py --max_pages 1
+        run: python -u src/data_collection/scraper.py --max_pages 1
         
       - name: Résultat
         if: success()
