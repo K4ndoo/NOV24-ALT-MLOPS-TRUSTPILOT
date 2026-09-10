@@ -33,8 +33,7 @@ def main():
             {'domain': 'www.zalando.fr', 'name': 'Zalando'},
             {'domain': 'www.backmarket.fr', 'name': 'BlackMarket'},  
         ]
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        DATASET_PATH = f'data/daily_inference/dataset_inference_{current_date}.csv'
+        DATASET_PATH = 'data/daily_inference/dataset_inference.csv'
     
     os.makedirs(os.path.dirname(DATASET_PATH), exist_ok=True)
     
@@ -48,7 +47,8 @@ def main():
         columns = [
             'comment_id', 'Commentaire', 'star', 'date', 'client', 'reponse', 
             'source', 'company', 'ville', 'maj', 'date_commande', 'ecart', 
-            'clean_comment', 'qualité produit', 'service livraison', 'service client'
+            'clean_comment', 'qualité produit', 'service livraison', 'service client',
+            'scraping_date'
         ]
         df = pd.DataFrame(columns=columns)
         existing_ids = set()
@@ -166,7 +166,8 @@ def main():
                                 'clean_comment': '',
                                 'qualité produit': 0,
                                 'service livraison': 0,
-                                'service client': 0
+                                'service client': 0,
+                                'scraping_date': datetime.now().strftime("%Y-%m-%d")
                             }
                             new_row[topic_label] = 1
                             new_rows.append(new_row)

@@ -13,8 +13,7 @@ from datetime import datetime
 load_dotenv()
 
 MODEL_DIR = "models/camembert"
-current_date = datetime.now().strftime("%Y-%m-%d")
-DATASET_PATH = f"data/daily_inference/dataset_inference_{current_date}.csv"
+DATASET_PATH = "data/daily_inference/dataset_inference.csv"
 TEXT_COL = "clean_comment"
 BATCH_SIZE = 32
 EXPERIMENT_NAME = "TrustPilot_Daily_Monitoring"
@@ -28,8 +27,13 @@ def main():
 
     print("Chargement du dataset quotidien...")
     df = pd.read_csv(DATASET_PATH)
+    
+    # on filtre uniquement sur les avis récupérés aujourd'hui 
+    today = datetime.now().strftime("%Y-%m-%d")
+    df = df[df.get('scraping_date', '') == today]
+    
     if len(df) == 0:
-        raise ValueError("🚨 CRITICAL ERROR: 0 avis récupérés aujourd'hui ! Le scraper a échoué (blocage WAF Trustpilot ou changement de design). L'inférence est annulée.")
+        raise ValueError("CRITICAL ERROR: 0 avis récupérés aujourd'hui ! Le scraper a échoué (blocage WAF Trustpilot ou changement de design). L'inférence est annulée.")
         
     import re
     def clean_text(text):
