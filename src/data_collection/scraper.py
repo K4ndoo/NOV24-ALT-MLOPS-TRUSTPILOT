@@ -7,13 +7,14 @@ import argparse
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
-# Topics to scrape
+# nos topics
 TOPICS = {
     'customer_service': 'service client',
     'delivery_service': 'service livraison',
     'product': 'qualité produit'
 }
 
+# les entreprises à scraper et leur domaine
 COMPANIES = [
     {'domain': 'www.showroomprive.com', 'name': 'ShowRoom'},
     {'domain': 'www.veepee.fr', 'name': 'VeePee'}
@@ -51,6 +52,16 @@ def main():
             domain = company_info['domain']
             company_name = company_info['name']
             print(f"Scraping company: {company_name}")
+
+            # obliger de charger une première fois la page de l'entreprise sinon quand on met des paramètres (topics, page) on a un 403 qui est accompagné d'une redirection
+            base_url = f"https://fr.trustpilot.com/review/{domain}"
+            print(f"  [Init] Chargement de la page principale pour les cookies ({base_url})...")
+            try:
+                page.goto(base_url, wait_until='networkidle', timeout=45000)
+            except Exception as e:
+                pass
+            
+            time.sleep(random.uniform(2.0, 5.0))
             
             for topic_url, topic_label in TOPICS.items():
                 print(f"  Scraping topic: {topic_label}")
@@ -61,11 +72,15 @@ def main():
                     print(f"  Sleeping for {sleep_time:.2f} seconds...")
                     time.sleep(sleep_time)
 
-                    url = f"https://fr.trustpilot.com/review/{domain}?page={page_num}&topics={topic_url}"
+                    # il ne faut pas qu'on mette le parametre pour charger la première page sinon on se prend une redirection automatique vers la page d'accueil de l'entreprise, et tous les paramètres sont retirés
+                    if page_num == 1:
+                        url = f"https://fr.trustpilot.com/review/{domain}?topics={topic_url}"
+                    else:
+                        url = f"https://fr.trustpilot.com/review/{domain}?page={page_num}&topics={topic_url}"
                     print(f"  Fetching {url}...")
                     
                     try:
-                        # wait_until="networkidle" bypasses the WAF JS challenge by waiting for it to finish
+                        # on attend jusqu'à être sur que playwright ait bypass waf et les challenges js
                         response = page.goto(url, wait_until='networkidle', timeout=45000)
                         
                         if response and response.status == 404:
@@ -102,12 +117,13 @@ def main():
                         c_id = str(r.get('id', ''))
                         text = r.get('text', '')
                         
-                        # On ignore les avis sans texte (inutiles pour notre modèle NLP)
+                        # On ignore les avis sans texte
                         if not c_id or not text or str(text).strip() == "":
                             continue
                             
-                        # Si l'avis n'était pas dans le CSV AVANT le lancement de ce script, 
-                        # on ne doit pas arrêter la pagination.
+                        # Si l'avis n'était pas dans le CSV AVANT le lancement de ce script, on ne doit pas arrêter la pagination.
+                        # On continue et on ajoute ce commentaire au CSV.
+                        # Par contre si tous les commentaires étaient déjà dans le CSV, on peut arrêter la pagination.
                         if c_id not in previously_existing_ids:
                             all_already_in_csv = False
                             
