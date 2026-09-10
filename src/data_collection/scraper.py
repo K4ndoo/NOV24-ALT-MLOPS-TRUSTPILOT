@@ -61,9 +61,7 @@ def main():
                     print(f"  Sleeping for {sleep_time:.2f} seconds...")
                     time.sleep(sleep_time)
 
-                    # Utilisation du nouveau paramètre ?search= de Trustpilot au lieu de topics=
-                    search_query = topic_label.replace(' ', '+')
-                    url = f"https://fr.trustpilot.com/review/{domain}?page={page_num}&search={search_query}"
+                    url = f"https://fr.trustpilot.com/review/{domain}?page={page_num}&topics={topic_url}"
                     print(f"  Fetching {url}...")
                     
                     try:
