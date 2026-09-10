@@ -101,7 +101,9 @@ def main():
     
     print(f"F1 micro du jour: {f1_micro:.3f} | F1 macro du jour: {f1_macro:.3f}")
 
-    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+    if not tracking_uri:
+        raise ValueError("CRITICAL ERROR: La variable MLFLOW_TRACKING_URI est manquante ! Les métriques seraient enregistrées localement et perdues. Vérifiez vos Secrets GitHub.")
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(EXPERIMENT_NAME)
 
