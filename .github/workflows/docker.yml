@@ -31,7 +31,7 @@ jobs:
           context: .
           file: ./Dockerfile.api
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/nov24-alt-mlops-trustpilot-api:latest
+          tags: ghcr.io/k4ndoo/nov24-alt-mlops-trustpilot-api:latest
 
       - name: Build and push Airflow image
         uses: docker/build-push-action@v6
@@ -39,5 +39,5 @@ jobs:
           context: .
           file: ./Dockerfile.airflow
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/nov24-alt-mlops-trustpilot-airflow:latest
+          tags: ghcr.io/k4ndoo/nov24-alt-mlops-trustpilot-airflow:latest
           
