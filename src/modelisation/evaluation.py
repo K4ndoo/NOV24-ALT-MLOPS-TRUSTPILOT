@@ -122,7 +122,10 @@ def main():
 
         # LOAD DATASETS
         df_main = pd.read_csv('data/labelled_dataset/dataset_avis.csv')
+        df_main[TEXT_COL] = df_main[TEXT_COL].fillna("")
+        
         df_gold = pd.read_csv('data/test_dataset/100_avis_annote.csv', sep=";")
+        df_gold[TEXT_COL] = df_gold[TEXT_COL].fillna("")
 
         dataset = Dataset.from_pandas(df_main[[TEXT_COL] + label_cols])
         dataset = dataset.train_test_split(test_size=0.2, seed=42)

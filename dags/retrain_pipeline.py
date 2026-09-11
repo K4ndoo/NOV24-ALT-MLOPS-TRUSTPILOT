@@ -24,35 +24,29 @@ with DAG(
     tags=['mlops', 'training'],
 ) as dag:
 
-    # Tâche 1 : Simulation de la vérification de nouvelles données
-    def _check_data():
-        print("[SIMULATION] Connexion à l'API Trustpilot...")
-        print("[SIMULATION] 500 nouveaux avis détectés !")
-        print("[SIMULATION] Fusion des nouveaux avis avec l'ancien dataset.")
-        return True
-
-    check_new_data = PythonOperator(
-        task_id='check_new_trustpilot_reviews',
-        python_callable=_check_data,
+    # Tâche 1 : Collecte des nouvelles données Trustpilot via scraper
+    collect_new_data = BashOperator(
+        task_id='collect_new_trustpilot_reviews',
+        bash_command='cd /opt/airflow && python -u src/data_collection/scraper.py',
     )
 
     # Tâche 2 : Entraînement réel du modèle
     retrain_model = BashOperator(
         task_id='train_camembert_model',
-        bash_command='export FAST_TRACK=true && cd /opt/airflow && python src/modelisation/train.py',
+        bash_command='export FAST_TRACK=true && cd /opt/airflow && python -u src/modelisation/train.py',
     )
 
     # Tâche 3 : Évaluation du modèle entraîné
     evaluate_model = BashOperator(
         task_id='evaluate_camembert_model',
-        bash_command='cd /opt/airflow && python src/modelisation/evaluation.py',
+        bash_command='cd /opt/airflow && python -u src/modelisation/evaluation.py',
     )
 
     # Tâche 4 : Décide si le candidat est meilleur que le modèle en place, et le déploie (DVC) si oui
     deploy_api = BashOperator(
         task_id='deploy_new_model_to_api',
-        bash_command='cd /opt/airflow && python src/modelisation/deploy.py',
+        bash_command='cd /opt/airflow && python -u src/modelisation/deploy.py',
     )
 
     # Ordre d'exécution du pipeline
-    check_new_data >> retrain_model >> evaluate_model >> deploy_api
+    collect_new_data >> retrain_model >> evaluate_model >> deploy_api

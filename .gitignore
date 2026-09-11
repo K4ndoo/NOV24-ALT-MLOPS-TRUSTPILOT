@@ -6,3 +6,4 @@ models/*
 !models/camembert.dvc
 mlruns/
 .env
+kaggle/secrets.json

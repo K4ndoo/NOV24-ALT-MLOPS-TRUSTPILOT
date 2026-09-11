@@ -1,0 +1,32 @@
+name: scraping
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-scraper:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+        
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Installer les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas playwright beautifulsoup4
+          
+      - name: Installer Playwright (Navigateur)
+        run: playwright install chromium
+        
+      - name: Lancer le scraper (Mode Test 1 page)
+        run: python -u src/data_collection/scraper.py --max_pages 1
+        
+      - name: Résultat
+        if: success()
+        run: echo "SUCCESS! The scrapping process is working!"
