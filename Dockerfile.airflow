@@ -16,7 +16,7 @@ USER airflow
 COPY requirements.txt /tmp/requirements.txt
 
 # Installation des librairies Python (on ajoute aussi la version CPU de PyTorch pour que le script de train tourne sans GPU)
-RUN pip install --no-cache-dir -r /tmp/requirements-airflow.txt \
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
     && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
 USER root
