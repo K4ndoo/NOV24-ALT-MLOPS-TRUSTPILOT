@@ -40,8 +40,9 @@ jobs:
           dvc remote modify origin --local password ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
           
       - name: DVC Pull (Récupérer le dernier modèle)
-        # On télécharge uniquement le dossier du modèle pour gagner du temps
-        run: dvc pull models/camembert.dvc
+        run: |
+          dvc pull models/camembert.dvc
+          dvc pull data/daily_inference.dvc
         
       - name: 1. Scraper de nouvelles données
         run: python -u src/data_collection/scraper.py --preset inference
