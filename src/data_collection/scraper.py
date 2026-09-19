@@ -79,7 +79,7 @@ def main():
                 for page_num in range(1, args.max_pages + 1):
 
                     # anti bot (on délai un peu)
-                    sleep_time = random.uniform(14.0, 32.0)
+                    sleep_time = random.uniform(8.0, 18.0)
                     print(f"  Sleeping for {sleep_time:.2f} seconds...")
                     time.sleep(sleep_time)
 
