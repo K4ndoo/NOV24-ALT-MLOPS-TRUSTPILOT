@@ -43,7 +43,7 @@ jobs:
         # On télécharge uniquement le dossier du modèle pour gagner du temps
         run: dvc pull models/camembert.dvc
         
-      - name: 1. Scraper de nouvelles données (La Redoute)
+      - name: 1. Scraper de nouvelles données
         run: python -u src/data_collection/scraper.py --preset inference
         
       - name: 2. Inférence & Shadow Evaluation
