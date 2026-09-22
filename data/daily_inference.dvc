@@ -1,6 +1,6 @@
 outs:
-- md5: d4fa188b78e58debec2d4e3ad2914573.dir
-  size: 455547
+- md5: 1f246f15f41d6d13a4d002115953bf7f.dir
+  size: 465137
   nfiles: 1
   hash: md5
   path: daily_inference
