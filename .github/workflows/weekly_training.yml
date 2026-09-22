@@ -105,12 +105,14 @@ jobs:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
         run: |
           set -euo pipefail
+          # Ajout de '.enable_internet = true' dans la commande jq
           jq --arg id "$KAGGLE_USERNAME/trustpilot-camembert-training" \
              --arg ds "$KAGGLE_USERNAME/trustpilot-ci-secrets" \
-             '.id = $id | .dataset_sources = [$ds]' \
+             '.id = $id | .dataset_sources = [$ds] | .enable_internet = true' \
              kaggle/kernel-metadata.json > /tmp/kernel-metadata.json
+             
           mv /tmp/kernel-metadata.json kaggle/kernel-metadata.json
-
+          
           SORTIE=$(kaggle kernels push -p kaggle/ 2>&1 || true)
           echo "$SORTIE"
           if echo "$SORTIE" | grep -qi "error"; then
