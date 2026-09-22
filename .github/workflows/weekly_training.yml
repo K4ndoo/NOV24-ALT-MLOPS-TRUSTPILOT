@@ -41,7 +41,7 @@ jobs:
       - name: DVC Pull (Récupérer les anciennes données)
         run: dvc pull
         
-      - name: 1. Scraper de nouvelles données (VeePee / ShowRoom)
+      - name: Scraper de nouvelles données (VeePee / ShowRoom)
         run: python -u src/data_collection/scraper.py --preset training
         
       - name: Sauvegarder les nouvelles données d'entraînement
@@ -54,9 +54,14 @@ jobs:
           git commit -m "Auto-update: Nouvelles données d'entraînement" || echo "Rien à commiter"
           git push
           
-      - name: 2. Injecter les secrets pour Kaggle
+      - name: Publier les secrets dans un dataset Kaggle privé
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
-          cat <<EOF > kaggle/secrets.json
+          set -euo pipefail
+          mkdir -p kaggle_secrets_ds
+          cat <<EOF > kaggle_secrets_ds/secrets.json
           {
             "MLFLOW_TRACKING_URI": "${{ secrets.MLFLOW_TRACKING_URI }}",
             "MLFLOW_TRACKING_USERNAME": "${{ secrets.MLFLOW_TRACKING_USERNAME }}",
@@ -65,8 +70,74 @@ jobs:
             "GITHUB_TOKEN": "${{ secrets.TOKEN_GIT }}"
           }
           EOF
+
+          DATASET_ID="$KAGGLE_USERNAME/trustpilot-ci-secrets"
+          jq -n --arg id "$DATASET_ID" \
+            '{title: "Trustpilot CI Secrets", id: $id, licenses: [{name: "CC0-1.0"}]}' \
+            > kaggle_secrets_ds/dataset-metadata.json
+
+          # on inspecte sa sortie kaggle
+          if kaggle datasets status "$DATASET_ID" >/dev/null 2>&1; then
+            SORTIE=$(kaggle datasets version -p kaggle_secrets_ds -m "Secrets CI" 2>&1 || true)
+          else
+            SORTIE=$(kaggle datasets create -p kaggle_secrets_ds 2>&1 || true)
+          fi
+          echo "$SORTIE"
+          if echo "$SORTIE" | grep -qi "error"; then
+            echo "::error::Publication du dataset de secrets échouée"
+            exit 1
+          fi
           
-      - name: 3. Lancer l'entraînement sur les GPU Kaggle
+          for _ in $(seq 1 30); do
+            STATUT=$(kaggle datasets status "$DATASET_ID" 2>&1 || echo indisponible)
+            echo "Statut du dataset : $STATUT"
+            case "$STATUT" in *ready*) break ;; esac
+            sleep 10
+          done
+          case "$STATUT" in
+            *ready*) ;;
+            *) echo "::error::Dataset de secrets non prêt (statut : $STATUT)"; exit 1 ;;
+          esac
+
+      - name: Lancer l'entraînement sur les GPU Kaggle
         env:
-          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
-        run: kaggle kernels push -p kaggle/
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          set -euo pipefail
+          jq --arg id "$KAGGLE_USERNAME/trustpilot-camembert-training" \
+             --arg ds "$KAGGLE_USERNAME/trustpilot-ci-secrets" \
+             '.id = $id | .dataset_sources = [$ds]' \
+             kaggle/kernel-metadata.json > /tmp/kernel-metadata.json
+          mv /tmp/kernel-metadata.json kaggle/kernel-metadata.json
+
+          SORTIE=$(kaggle kernels push -p kaggle/ 2>&1 || true)
+          echo "$SORTIE"
+          if echo "$SORTIE" | grep -qi "error"; then
+            echo "::error::Push du kernel Kaggle échoué"
+            exit 1
+          fi
+
+      - name: on attend la fin de l'entraînement et récupérer le log
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          set -euo pipefail
+          KERNEL_ID="$KAGGLE_USERNAME/trustpilot-camembert-training"
+
+          # on attend 45min : au-delà, on considère l'entraînement en échec.
+          for _ in $(seq 1 45); do
+            STATUT=$(kaggle kernels status "$KERNEL_ID" 2>&1 | sed -n 's/.*has status "\(.*\)".*/\1/p' || true)
+            echo "Statut du kernel : ${STATUT:-inconnu}"
+            case "$STATUT" in complete|error|cancel_acknowledged) break ;; esac
+            sleep 60
+          done
+
+          kaggle kernels output "$KERNEL_ID" -p kernel_log || true
+          cat kernel_log/trustpilot-camembert-training.log || echo "Log du kernel indisponible"
+
+          if [ "$STATUT" != "complete" ]; then
+            echo "::error::Entraînement Kaggle terminé en statut '$STATUT'"
+            exit 1
+          fi
