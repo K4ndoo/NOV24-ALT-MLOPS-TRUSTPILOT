@@ -1,6 +1,8 @@
 import os
 import subprocess
 import sys
+import glob
+import json
 
 def run(cmd):
     print(f"\n========================================\n[KAGGLE BOT] Exécution : {cmd}\n========================================")
@@ -9,11 +11,30 @@ def run(cmd):
         print(f"Erreur lors de l'exécution de la commande : {cmd}")
         sys.exit(result.returncode)
 
-# on récupère les secrets depuis le dataset privé publié par github actions
-SECRETS_PATH = "/kaggle/input/trustpilot-ci-secrets/secrets.json"
+# --- BLOC DE DÉBOGAGE ET RECHERCHE DYNAMIQUE ---
+print("=== DEBUG KAGGLE INPUTS ===")
+if os.path.exists('/kaggle/input/'):
+    print("Dossiers dans /kaggle/input/ :", os.listdir('/kaggle/input/'))
+    for folder in os.listdir('/kaggle/input/'):
+        path = f'/kaggle/input/{folder}'
+        if os.path.isdir(path):
+            print(f"Contenu de {path} :", os.listdir(path))
+else:
+    print("Le dossier /kaggle/input/ n'existe pas !")
+print("===========================")
+
+# Recherche dynamique du fichier secrets (gère les cas où Kaggle ajoute un suffixe -1, -2...)
+secret_files = glob.glob("/kaggle/input/**/secrets.json", recursive=True)
+
+if not secret_files:
+    print("Erreur : Impossible de trouver un fichier secrets.json dans /kaggle/input/. Le dataset de secrets est-il bien attaché au kernel ?")
+    sys.exit(1)
+
+SECRETS_PATH = secret_files[0]
+print(f"✅ Fichier de secrets trouvé et sélectionné : {SECRETS_PATH}")
+# -----------------------------------------------
 
 try:
-    import json
     with open(SECRETS_PATH, "r") as f:
         secrets = json.load(f)
     
@@ -25,7 +46,7 @@ try:
     GITHUB_USERNAME = secrets["GITHUB_USERNAME"]
     
 except Exception as e:
-    print(f"Erreur : Impossible de lire {SECRETS_PATH}. Le dataset de secrets est-il bien attaché au kernel ?")
+    print(f"Erreur lors de la lecture des secrets : {e}")
     sys.exit(1)
 
 REPO_URL = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/NOV24-ALT-MLOPS-TRUSTPILOT.git"
