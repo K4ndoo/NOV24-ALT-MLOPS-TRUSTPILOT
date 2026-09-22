@@ -57,7 +57,7 @@ jobs:
       - name: Publier les secrets dans un dataset Kaggle privé
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
         run: |
           set -euo pipefail
           mkdir -p kaggle_secrets_ds
@@ -102,7 +102,7 @@ jobs:
       - name: Lancer l'entraînement sur les GPU Kaggle
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
         run: |
           set -euo pipefail
           jq --arg id "$KAGGLE_USERNAME/trustpilot-camembert-training" \
@@ -121,7 +121,7 @@ jobs:
       - name: on attend la fin de l'entraînement et récupérer le log
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
         run: |
           set -euo pipefail
           KERNEL_ID="$KAGGLE_USERNAME/trustpilot-camembert-training"
