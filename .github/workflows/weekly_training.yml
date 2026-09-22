@@ -127,19 +127,34 @@ jobs:
         run: |
           set -euo pipefail
           KERNEL_ID="$KAGGLE_USERNAME/trustpilot-camembert-training"
-
-          # on attend 45min : au-delà, on considère l'entraînement en échec.
+          
+          # On attend 45min : au-delà, on considère l'entraînement en échec
           for _ in $(seq 1 45); do
-            STATUT=$(kaggle kernels status "$KERNEL_ID" 2>&1 | sed -n 's/.*has status "\(.*\)".*/\1/p' || true)
-            echo "Statut du kernel : ${STATUT:-inconnu}"
-            case "$STATUT" in complete|error|cancel_acknowledged) break ;; esac
+            # On récupère la sortie brute de la commande sans chercher à la découper avec sed
+            RAW_STATUS=$(kaggle kernels status "$KERNEL_ID" 2>&1 || true)
+            echo "Statut du kernel : $RAW_STATUS"
+
+            case "$RAW_STATUS" in 
+              *"COMPLETE"* | *"complete"*) 
+                STATUT="complete"
+                break 
+                ;; 
+              *"ERROR"* | *"error"*) 
+                STATUT="error"
+                break 
+                ;; 
+              *"CANCEL"* | *"cancel"*) 
+                STATUT="cancelled"
+                break 
+                ;; 
+            esac
             sleep 60
           done
-
+          
           kaggle kernels output "$KERNEL_ID" -p kernel_log || true
           cat kernel_log/trustpilot-camembert-training.log || echo "Log du kernel indisponible"
-
-          if [ "$STATUT" != "complete" ]; then
+          
+          if [ "${STATUT:-inconnu}" != "complete" ]; then
             echo "::error::Entraînement Kaggle terminé en statut '$STATUT'"
             exit 1
           fi
