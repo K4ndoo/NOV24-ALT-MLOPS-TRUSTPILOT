@@ -9,10 +9,12 @@ def run(cmd):
         print(f"Erreur lors de l'exécution de la commande : {cmd}")
         sys.exit(result.returncode)
 
-# 1. Récupération des Secrets depuis le fichier injecté par GitHub Actions
+# on récupère les secrets depuis le dataset privé publié par github actions
+SECRETS_PATH = "/kaggle/input/trustpilot-ci-secrets/secrets.json"
+
 try:
     import json
-    with open("secrets.json", "r") as f:
+    with open(SECRETS_PATH, "r") as f:
         secrets = json.load(f)
     
     os.environ["MLFLOW_TRACKING_URI"] = secrets["MLFLOW_TRACKING_URI"]
@@ -23,7 +25,7 @@ try:
     GITHUB_USERNAME = secrets["GITHUB_USERNAME"]
     
 except Exception as e:
-    print("Erreur : Impossible de lire secrets.json. L'injection depuis GitHub Actions a échoué.")
+    print(f"Erreur : Impossible de lire {SECRETS_PATH}. Le dataset de secrets est-il bien attaché au kernel ?")
     sys.exit(1)
 
 REPO_URL = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/NOV24-ALT-MLOPS-TRUSTPILOT.git"

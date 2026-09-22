@@ -1,5 +1,5 @@
 {
-  "id": "VOTRE_PSEUDO_KAGGLE/trustpilot-camembert-training",
+  "id": "__KAGGLE_USERNAME__/trustpilot-camembert-training",
   "title": "Trustpilot CamemBERT Training",
   "code_file": "training_runner.py",
   "language": "python",

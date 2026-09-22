@@ -7,3 +7,4 @@ models/*
 mlruns/
 .env
 kaggle/secrets.json
+kaggle_secrets_ds/
