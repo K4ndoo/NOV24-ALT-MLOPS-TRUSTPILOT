@@ -1,13 +1,13 @@
 {
-  "id": "__KAGGLE_USERNAME__/trustpilot-camembert-training",
-  "title": "Trustpilot CamemBERT Training",
-  "code_file": "training_runner.py",
-  "language": "python",
-  "kernel_type": "script",
-  "is_private": "true",
-  "enable_gpu": "true",
-  "enable_internet": "true",
-  "dataset_sources": [],
-  "competition_sources": [],
-  "kernel_sources": []
+    "id": "__KAGGLE_USERNAME__/trustpilot-camembert-training",
+    "title": "Trustpilot CamemBERT Training",
+    "code_file": "weekly_training.py",
+    "language": "python",
+    "kernel_type": "script",
+    "is_private": "true",
+    "enable_gpu": "true",
+    "enable_internet": "true",
+    "dataset_sources": [],
+    "competition_sources": [],
+    "kernel_sources": []
 }

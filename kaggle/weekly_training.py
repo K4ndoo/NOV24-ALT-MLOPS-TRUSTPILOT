@@ -23,7 +23,7 @@ else:
     print("Le dossier /kaggle/input/ n'existe pas !")
 print("===========================")
 
-# Recherche dynamique du fichier secrets (gère les cas où Kaggle ajoute un suffixe -1, -2...)
+# Recherche dynamique du fichier secrets
 secret_files = glob.glob("/kaggle/input/**/secrets.json", recursive=True)
 
 if not secret_files:
@@ -51,30 +51,30 @@ except Exception as e:
 
 REPO_URL = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/NOV24-ALT-MLOPS-TRUSTPILOT.git"
 
-# 2. Cloner le dépôt GitHub (Code toujours à jour !)
+# on clone le dépôt GitHub (Code toujours à jour !)
 run(f"git clone {REPO_URL} repo")
 os.chdir("repo")
 
-# 3. Installation des dépendances
+# on installe des dépendances
 run("pip install -r requirements.txt")
 
-# 4. Configuration de DVC et téléchargement du Dataset
+# on cofigure DVC et on télécharge le dataset
 run("dvc remote modify origin --local user $MLFLOW_TRACKING_USERNAME")
 run("dvc remote modify origin --local password $MLFLOW_TRACKING_PASSWORD")
 run("dvc pull")
 
-# 5. Entraînement sur le GPU Kaggle ! (Sans le FAST_TRACK, on entraîne pour de vrai)
+# on entraîne sur le GPU Kaggle
 os.environ["FAST_TRACK"] = "false"
 run("python src/modelisation/train.py")
 
-# 6. Évaluation du modèle
+# on fait l'évvaluation du modèle
 run("python src/modelisation/evaluation.py")
 
-# 7. Sauvegarde et envoi du modèle sur DagsHub
+# on sauvegarde et envoi le modèle sur dagshub
 run("python src/modelisation/deploy.py")
 run("dvc push")
 
-# 8. Commit du .dvc mis à jour sur GitHub
+# commit le .dvc mis à jour sur github
 run('git config --global user.email "kaggle-bot@actions.com"')
 run('git config --global user.name "Kaggle CI Bot"')
 run("git add models/camembert.dvc")
