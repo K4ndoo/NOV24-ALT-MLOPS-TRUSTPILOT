@@ -59,6 +59,11 @@ def copy_tree_contents_only(src_dir, dst_dir):
 
 def promote(run_id, test_f1_micro):
     print(f"Téléchargement du modèle candidat (run {run_id}) vers '{OUTPUT_DIR}'...")
+    
+    # on supprime d'abord l'index de devc avant la vrai suppression avec shutil sinon on perd completement le tracking dvc et ca se desynchronise avec git
+    if os.path.exists(f"{OUTPUT_DIR}.dvc"):
+        subprocess.run(["dvc", "remove", f"{OUTPUT_DIR}.dvc"], check=False)
+
     # on repart d'un dossier propre pour ne pas mélanger avec des restes d'une tentative précédente
     shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -79,7 +84,9 @@ def promote(run_id, test_f1_micro):
 
     configure_dvc_remote()
     subprocess.run(["dvc", "add", OUTPUT_DIR], check=True)
-    subprocess.run(["dvc", "push"], check=True)
+    
+    # on force le push explicite du modèle en précisant le chemin
+    subprocess.run(["dvc", "push", f"{OUTPUT_DIR}.dvc", "-r", "origin"], check=True)
 
     print(f"\nModèle promu dans '{OUTPUT_DIR}' et poussé sur DagsHub via DVC.")
     print("Pense à commiter et pousser 'models/camembert.dvc' sur git pour partager cette version à l'équipe.")

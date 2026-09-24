@@ -72,7 +72,6 @@ run("python src/modelisation/evaluation.py")
 
 # on sauvegarde et envoi le modèle sur dagshub
 run("python src/modelisation/deploy.py")
-run("dvc push")
 
 # commit le .dvc mis à jour sur github
 run('git config --global user.email "kaggle-bot@actions.com"')
