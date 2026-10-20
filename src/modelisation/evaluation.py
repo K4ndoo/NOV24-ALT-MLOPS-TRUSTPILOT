@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import torch
 import mlflow
-from mlflow.tracking.client import MlflowClient
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,27 +18,19 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 
 TEXT_COL = "clean_comment"
 BATCH_SIZE = 32
-EXPERIMENT_NAME = "TrustPilot_CamemBERT_Classification"
+RUN_ID_FILE = "models/last_run_id.txt" # écrit par train.py
 
 
-def get_latest_candidate(tmp_dir):
-    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
-    mlflow.set_tracking_uri(tracking_uri)
-    client = MlflowClient(tracking_uri=tracking_uri)
+def get_candidate(tmp_dir):
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
 
-    experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
-    if not experiment:
-        raise RuntimeError(f"Expérience MLflow '{EXPERIMENT_NAME}' introuvable.")
+    # on évalue le run noté par train.py, et pas le dernier run de l'expérience
+    # (un autre pipeline, Kaggle ou Airflow, a pu en lancer un entre-temps)
+    if not os.path.exists(RUN_ID_FILE):
+        raise RuntimeError(f"'{RUN_ID_FILE}' introuvable. Lance d'abord train.py.")
+    with open(RUN_ID_FILE, "r", encoding="utf-8") as f:
+        run_id = f.read().strip()
 
-    runs = client.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        order_by=["attributes.start_time DESC"],
-        max_results=1,
-    )
-    if not runs:
-        raise RuntimeError("Aucun run trouvé dans MLflow. Lance d'abord train.py.")
-
-    run_id = runs[0].info.run_id
     print(f"Récupération du modèle candidat depuis le run MLflow : {run_id}")
     model_dir = mlflow.artifacts.download_artifacts(
         run_id=run_id, artifact_path="camembert_model", dst_path=tmp_dir
@@ -49,7 +40,7 @@ def get_latest_candidate(tmp_dir):
 
 def main():
     with tempfile.TemporaryDirectory() as tmp_dir:
-        model_dir, run_id = get_latest_candidate(tmp_dir)
+        model_dir, run_id = get_candidate(tmp_dir)
 
         tokenizer = AutoTokenizer.from_pretrained(model_dir)
         model = AutoModelForSequenceClassification.from_pretrained(model_dir)

@@ -65,6 +65,7 @@ run("dvc pull")
 
 # on entraîne sur le GPU Kaggle
 os.environ["FAST_TRACK"] = "false"
+os.environ["TRAINING_SOURCE"] = "kaggle"
 run("python src/modelisation/train.py")
 
 # on fait l'évvaluation du modèle

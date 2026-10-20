@@ -10,18 +10,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OUTPUT_DIR = "models/camembert"
-EXPERIMENT_NAME = "TrustPilot_CamemBERT_Classification"
+RUN_ID_FILE = "models/last_run_id.txt" # écrit par train.py
 
 
-def get_latest_run(client, experiment_id):
-    runs = client.search_runs(
-        experiment_ids=[experiment_id],
-        order_by=["attributes.start_time DESC"],
-        max_results=1,
-    )
-    if not runs:
-        raise RuntimeError("Aucun run trouvé dans MLflow. Lance d'abord train.py.")
-    return runs[0]
+def get_candidate_run(client):
+    # on déploie le run noté par train.py, et pas le dernier run de l'expérience
+    # (un autre pipeline, Kaggle ou Airflow, a pu en lancer un entre-temps)
+    if not os.path.exists(RUN_ID_FILE):
+        raise RuntimeError(f"'{RUN_ID_FILE}' introuvable. Lance d'abord train.py.")
+    with open(RUN_ID_FILE, "r", encoding="utf-8") as f:
+        run_id = f.read().strip()
+    return client.get_run(run_id)
 
 
 def get_current_best_f1():
@@ -97,11 +96,7 @@ def main():
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient(tracking_uri=tracking_uri)
 
-    experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
-    if not experiment:
-        raise RuntimeError(f"Expérience MLflow '{EXPERIMENT_NAME}' introuvable.")
-
-    run = get_latest_run(client, experiment.experiment_id)
+    run = get_candidate_run(client)
     test_f1_micro = run.data.metrics.get("test_f1_micro")
     if test_f1_micro is None:
         raise RuntimeError(

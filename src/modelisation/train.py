@@ -30,6 +30,13 @@ LABEL_COLS = ["qualité produit", "service livraison", "service client"]
 
 USE_FP16 = torch.cuda.is_available() # demi-précision automatique si GPU dispo
 
+# Origine de l'entraînement (kaggle, airflow ou manuel) pour distinguer les runs dans MLflow
+TRAINING_SOURCE = os.getenv("TRAINING_SOURCE", "manuel")
+
+# Fichier où on note l'id du run, pour qu'evaluation.py et deploy.py traitent CE candidat
+# et pas simplement le dernier run de l'expérience (qui peut venir d'un autre pipeline)
+RUN_ID_FILE = "models/last_run_id.txt"
+
 
 # GLOBAL COMPONENTS FOR MULTIPROCESSING
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -113,7 +120,9 @@ def main():
 
 
     # TRAINING & MLFLOW TRACKING
-    with mlflow.start_run(run_name="Camembert_Base_Run1"), tempfile.TemporaryDirectory() as tmp_dir:
+    run_name = f"Camembert_{TRAINING_SOURCE}_{pd.Timestamp.now().strftime('%Y-%m-%d_%H-%M')}"
+    with mlflow.start_run(run_name=run_name) as run, tempfile.TemporaryDirectory() as tmp_dir:
+        mlflow.set_tags({"training_source": TRAINING_SOURCE, "fast_track": str(FAST_TRACK).lower()})
 
         training_args = TrainingArguments(
             output_dir=tmp_dir,
@@ -207,6 +216,11 @@ def main():
         tokenizer.save_pretrained(tmp_dir)
 
         mlflow.log_artifacts(tmp_dir, artifact_path="camembert_model")
+
+    os.makedirs(os.path.dirname(RUN_ID_FILE), exist_ok=True)
+    with open(RUN_ID_FILE, "w", encoding="utf-8") as f:
+        f.write(run.info.run_id)
+    print(f"Run MLflow du candidat : {run.info.run_id} ({run_name})")
 
     print("\nEntraînement terminé. Modèle candidat loggé dans MLflow.")
     print("Lance evaluation.py puis deploy.py pour évaluer et éventuellement promouvoir ce candidat.")

@@ -30,10 +30,22 @@ with DAG(
         bash_command='cd /opt/airflow && python -u src/data_collection/scraper.py',
     )
 
+    # Tâche 1 bis : Versionnement des nouvelles données sur DagsHub (DVC), comme dans weekly_training.yml
+    save_new_data = BashOperator(
+        task_id='save_new_data_to_dvc',
+        bash_command=(
+            'cd /opt/airflow && '
+            'dvc remote modify origin --local user "$MLFLOW_TRACKING_USERNAME" && '
+            'dvc remote modify origin --local password "$MLFLOW_TRACKING_PASSWORD" && '
+            'dvc add data/labelled_dataset/dataset_avis.csv && '
+            'dvc push data/labelled_dataset/dataset_avis.csv.dvc -r origin'
+        ),
+    )
+
     # Tâche 2 : Entraînement réel du modèle
     retrain_model = BashOperator(
         task_id='train_camembert_model',
-        bash_command='export FAST_TRACK=true && cd /opt/airflow && python -u src/modelisation/train.py',
+        bash_command='export FAST_TRACK=true && export TRAINING_SOURCE=airflow && cd /opt/airflow && python -u src/modelisation/train.py',
     )
 
     # Tâche 3 : Évaluation du modèle entraîné
@@ -49,4 +61,4 @@ with DAG(
     )
 
     # Ordre d'exécution du pipeline
-    collect_new_data >> retrain_model >> evaluate_model >> deploy_api
+    collect_new_data >> save_new_data >> retrain_model >> evaluate_model >> deploy_api
