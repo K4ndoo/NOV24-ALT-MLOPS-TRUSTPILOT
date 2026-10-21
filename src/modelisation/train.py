@@ -349,7 +349,7 @@ def main():
         per_device_train_batch_size=TRAIN_BATCH_SIZE,
         per_device_eval_batch_size=EVAL_BATCH_SIZE,
         gradient_accumulation_steps=GRADIENT_ACCUMULATION,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
         logging_steps=10,
         fp16=USE_FP16,
