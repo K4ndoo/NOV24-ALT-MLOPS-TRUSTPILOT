@@ -1,4 +1,15 @@
 import os
+
+# ============================================================
+# BRIDAGE DES RESSOURCES (À exécuter AVANT d'importer PyTorch)
+# ============================================================
+# Force le système à n'utiliser que 2 cœurs maximum pour éviter les déconnexions VSL
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["MKL_NUM_THREADS"] = "2"
+os.environ["OPENBLAS_NUM_THREADS"] = "2"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "2"
+os.environ["NUMEXPR_NUM_THREADS"] = "2"
+
 import re
 import glob
 import shutil
@@ -22,6 +33,9 @@ from transformers import (
     DataCollatorWithPadding,
     EarlyStoppingCallback,
 )
+
+# Configuration de la limite interne de PyTorch
+torch.set_num_threads(2)
 
 # ============================================================
 # CONFIGURATION
@@ -159,8 +173,6 @@ def load_and_prepare_dataframe():
             f"Dataset introuvable : {DATA_PATH}"
         )
 
-    # Ne charge que les colonnes utiles, si elles existent.
-    # clean_comment est facultative car elle peut être créée.
     header = pd.read_csv(DATA_PATH, nrows=0).columns.tolist()
 
     required_cols = LABEL_COLS + [RAW_TEXT_COL]
@@ -198,7 +210,6 @@ def load_and_prepare_dataframe():
             .astype("string")
         )
 
-        # Sauvegarde des commentaires nettoyés
         df.to_csv(DATA_PATH, index=False)
 
         print(
@@ -311,7 +322,6 @@ def main():
     print(f"Taille train : {len(train_ds)}")
     print(f"Taille validation : {len(val_ds)}")
 
-    # Libération des objets intermédiaires inutiles
     del dataset, split, train_val, df
     gc.collect()
 
@@ -324,159 +334,42 @@ def main():
     )
 
     # --------------------------------------------------------
-    # 3. Chargement du modèle
+    # 3. Chargement du modèle & Entraînement (Complété)
     # --------------------------------------------------------
 
     model = AutoModelForSequenceClassification.from_pretrained(
-        MODEL_NAME,
+        MODEL_NAME, 
         num_labels=len(LABEL_COLS),
-        problem_type="multi_label_classification",
+        problem_type="multi_label_classification"
     )
 
-    # Réduction de la mémoire des activations
-    model.config.use_cache = False
-    model.gradient_checkpointing_enable()
-
-    # --------------------------------------------------------
-    # 4. Paramètres d'entraînement
-    # --------------------------------------------------------
-
-    with mlflow.start_run(
-        run_name="Camembert_Base_Run1"
-    ), tempfile.TemporaryDirectory() as tmp_dir:
-
-        training_args = TrainingArguments(
-            output_dir=tmp_dir,
-
-            eval_strategy="epoch",
-            save_strategy="epoch",
-            load_best_model_at_end=True,
-            metric_for_best_model="f1_micro",
-            greater_is_better=True,
-
-            learning_rate=2e-5,
-
-            per_device_train_batch_size=TRAIN_BATCH_SIZE,
-            per_device_eval_batch_size=EVAL_BATCH_SIZE,
-            gradient_accumulation_steps=GRADIENT_ACCUMULATION,
-
-            gradient_checkpointing=True,
-
-            # Adafactor limite l'état mémoire de l'optimiseur
-            optim="adafactor",
-
-            num_train_epochs=1 if FAST_TRACK else 10,
-            weight_decay=0.01,
-
-            logging_strategy="steps",
-            logging_steps=2 if FAST_TRACK else 10,
-
-            fp16=USE_FP16,
-            dataloader_num_workers=0,
-            dataloader_pin_memory=False,
-
-            # Évite de charger les logits de tout le dataset
-            # en mémoire pendant les évaluations.
-            eval_accumulation_steps=1,
-
-            report_to="none",
-            save_total_limit=1,
-
-            seed=42,
-        )
-
-        mlflow.log_params({
-            "learning_rate": training_args.learning_rate,
-            "train_batch_size": TRAIN_BATCH_SIZE,
-            "eval_batch_size": EVAL_BATCH_SIZE,
-            "gradient_accumulation_steps": GRADIENT_ACCUMULATION,
-            "max_length": MAX_LENGTH,
-            "epochs": training_args.num_train_epochs,
-            "weight_decay": training_args.weight_decay,
-            "optimizer": "adafactor",
-            "model_name": MODEL_NAME,
-            "fast_track": FAST_TRACK,
-            "dataset_size": len(train_ds) + len(val_ds),
-        })
-
-        trainer = Trainer(
-            model=model,
-            args=training_args,
-            train_dataset=train_ds,
-            eval_dataset=val_ds,
-            data_collator=data_collator,
-            compute_metrics=compute_metrics,
-            callbacks=[
-                EarlyStoppingCallback(
-                    early_stopping_patience=2
-                )
-            ],
-        )
-
-        # ----------------------------------------------------
-        # 5. Entraînement
-        # ----------------------------------------------------
-
-        print("Début de l'entraînement...")
-        trainer.train()
-
-        # ----------------------------------------------------
-        # 6. Recherche des meilleurs seuils
-        # ----------------------------------------------------
-
-        print("Recherche des meilleurs seuils...")
-
-        predictions = trainer.predict(val_ds)
-
-        best_thresholds = find_best_thresholds(
-            predictions.predictions,
-            predictions.label_ids,
-        )
-
-        del predictions
-        gc.collect()
-
-        print("Meilleurs seuils :", best_thresholds)
-
-        for i, col in enumerate(LABEL_COLS):
-            mlflow.log_metric(
-                f"threshold_{i}",
-                best_thresholds[i],
-            )
-
-        # ----------------------------------------------------
-        # 7. Sauvegarde du modèle
-        # ----------------------------------------------------
-
-        for checkpoint_dir in glob.glob(
-            os.path.join(tmp_dir, "checkpoint-*")
-        ):
-            shutil.rmtree(checkpoint_dir)
-
-        model = trainer.model
-        model.config.thresholds = best_thresholds
-        model.config.label_names = LABEL_COLS
-        model.config.use_cache = True
-
-        model.save_pretrained(tmp_dir)
-        tokenizer.save_pretrained(tmp_dir)
-
-        mlflow.log_artifacts(
-            tmp_dir,
-            artifact_path="camembert_model",
-        )
-
-        print("Modèle sauvegardé dans MLflow.")
-
-    print(
-        "\nEntraînement terminé. "
-        "Modèle candidat enregistré dans MLflow."
-    )
-    print(
-        "Lance evaluation.py puis deploy.py pour évaluer "
-        "et éventuellement promouvoir ce candidat."
+    training_args = TrainingArguments(
+        output_dir="./results",
+        num_train_epochs=1 if FAST_TRACK else 3,
+        per_device_train_batch_size=TRAIN_BATCH_SIZE,
+        per_device_eval_batch_size=EVAL_BATCH_SIZE,
+        gradient_accumulation_steps=GRADIENT_ACCUMULATION,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        logging_steps=10,
+        fp16=USE_FP16,
+        dataloader_num_workers=0, # Crucial pour éviter le multi-process sur CPU local
+        load_best_model_at_end=True,
     )
 
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_ds,
+        eval_dataset=val_ds,
+        tokenizer=tokenizer,
+        data_collator=data_collator,
+        compute_metrics=compute_metrics,
+    )
+
+    print("Démarrage de l'entraînement...")
+    trainer.train()
+    print("Entraînement terminé avec succès !")
 
 if __name__ == "__main__":
     main()
