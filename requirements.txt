@@ -1,72 +1,116 @@
+
+# ============================================================
+# 1. API WEB : FastAPI et serveur ASGI
+# ============================================================
+fastapi==0.136.3
+uvicorn==0.49.0
+starlette==1.2.1
+httpx==0.28.1
+h11==0.16.0
+anyio==4.13.0
+
+# ============================================================
+# 2. VALIDATION ET CONFIGURATION
+# ============================================================
+pydantic==2.13.4
+pydantic_core==2.46.4
+annotated-doc==0.0.4
+annotated-types==0.7.0
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+python-dotenv
+PyYAML==6.0.3
+click==8.4.1
+typer==0.25.1
+packaging==26.2
+setuptools<81
+
+# ============================================================
+# 3. MACHINE LEARNING : Transformers et Hugging Face
+# ============================================================
+transformers==5.10.2
+datasets==5.0.0
+huggingface_hub==1.18.0
+tokenizers==0.22.2
+safetensors==0.8.0
+accelerate>=1.1.0
+hf-xet==1.5.1
+filelock==3.29.1
+regex==2026.5.9
+
+# ============================================================
+# 4. CALCUL SCIENTIFIQUE ET TRAITEMENT DE DONNEES
+# ============================================================
+numpy==2.4.6
+pandas==3.0.3
+scipy==1.17.1
+scikit-learn==1.9.0
+joblib==1.5.3
+threadpoolctl==3.6.0
+pyarrow==24.0.0
+narwhals==2.22.1
+dill==0.4.1
+multiprocess==0.70.19
+xxhash==3.7.0
+
+# ============================================================
+# 5. MLOPS : suivi, versionnement et artefacts
+# ============================================================
+mlflow
+dvc
+
+# ============================================================
+# 6. SCRAPING WEB ET NAVIGATEUR
+# ============================================================
+playwright
+beautifulsoup4==4.12.3
+curl_cffi==0.7.3
+
+# ============================================================
+# 7. MONITORING
+# ============================================================
+prometheus-client
+
+# ============================================================
+# 8. SECURITE ET PROTOCOLES HTTP
+# ============================================================
+certifi==2026.5.20
+charset-normalizer==3.4.7
+idna==3.18
+requests==2.34.2
+urllib3==2.7.0
+pyOpenSSL>=24.0.0
+protobuf<5.0.0
+
+# ============================================================
+# 9. DEPENDANCES ASYNC ET RESEAU
+# ============================================================
 aiohappyeyeballs==2.6.2
 aiohttp==3.14.1
 aiosignal==1.4.0
-annotated-doc==0.0.4
-annotated-types==0.7.0
-anyio==4.13.0
-attrs==26.1.0
-certifi==2026.5.20
-charset-normalizer==3.4.7
-click==8.4.1
-datasets==5.0.0
-dill==0.4.1
-fastapi==0.136.3
-filelock==3.29.1
 frozenlist==1.8.0
-fsspec==2026.4.0
-h11==0.16.0
-hf-xet==1.5.1
+multidict==6.7.1
+propcache==0.5.2
+yarl==1.24.2
 httpcore==1.0.9
-httpx==0.28.1
-huggingface_hub==1.18.0
-idna==3.18
-joblib==1.5.3
+fsspec==2026.4.0
+
+# ============================================================
+# 10. UTILITAIRES, AFFICHAGE ET COMPATIBILITE
+# ============================================================
+attrs==26.1.0
+beautifulsoup4==4.12.3
+filelock==3.29.1
 markdown-it-py==4.2.0
 mdurl==0.1.2
-multidict==6.7.1
-multiprocess==0.70.19
-narwhals==2.22.1
-numpy==2.4.6
-packaging==26.2
-pandas==3.0.3
-propcache==0.5.2
-pyarrow==24.0.0
-pydantic==2.13.4
-pydantic_core==2.46.4
 Pygments==2.20.0
-python-dateutil==2.9.0.post0
-PyYAML==6.0.3
-regex==2026.5.9
-requests==2.34.2
 rich==15.0.0
-safetensors==0.8.0
-scikit-learn==1.9.0
-scipy==1.17.1
 shellingham==1.5.4
 six==1.17.0
-starlette==1.2.1
-threadpoolctl==3.6.0
-tokenizers==0.22.2
 tqdm==4.68.2
-transformers==5.10.2
-typer==0.25.1
-typing-inspection==0.4.2
-typing_extensions==4.15.0
-urllib3==2.7.0
-uvicorn==0.49.0
-xxhash==3.7.0
-yarl==1.24.2
-mlflow
-dvc
+python-dateutil==2.9.0.post0
+
+# ============================================================
+# 11. TESTS
+# ============================================================
 pytest
-httpx
-protobuf<5.0.0
-SQLAlchemy<2.0.0
-accelerate>=1.1.0
-python-dotenv
-setuptools<81
-pyOpenSSL>=24.0.0
-curl_cffi==0.7.3
-beautifulsoup4==4.12.3
-playwright
-prometheus-client

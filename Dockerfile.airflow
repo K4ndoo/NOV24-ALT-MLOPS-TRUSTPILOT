@@ -1,29 +1,34 @@
+
 FROM apache/airflow:2.9.2
 
 USER root
 
-# installation des dépendances système 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-         build-essential \
-  && apt-get autoremove -yqq --purge \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 USER airflow
 
-# Copie des requirements
-COPY requirements.txt /tmp/requirements.txt
+COPY --chown=airflow:root requirements.txt /tmp/requirements.txt
 
-# Installation des librairies Python
-RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir --retries 5 --timeout 120 -r /tmp/requirements.txt \
-    && python -m pip install --no-cache-dir --retries 5 --timeout 120 torch --index-url https://download.pytorch.org/whl/cpu
+RUN python -m pip install \
+        --no-cache-dir \
+        --retries 5 \
+        --timeout 120 \
+        -r /tmp/requirements.txt \
+    && python -m pip install \
+        --no-cache-dir \
+        --retries 5 \
+        --timeout 120 \
+        torch \
+        --index-url https://download.pytorch.org/whl/cpu
 
 USER root
-# Installation des dépendances système Chromium via le binaire playwright de l'utilisateur airflow
-RUN PATH="/home/airflow/.local/bin:$PATH" playwright install-deps chromium
+
+RUN PATH="/home/airflow/.local/bin:$PATH" \
+    playwright install-deps chromium
 
 USER airflow
-# Installation des navigateurs
+
 RUN playwright install chromium
