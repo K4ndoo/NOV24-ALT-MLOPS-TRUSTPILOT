@@ -93,6 +93,20 @@ def model_info(api_key: str = Depends(get_api_key)):
         "thresholds": predictor.thresholds
     }
 
+@api.post("/model/reload")
+def model_reload(api_key: str = Depends(get_api_key)):
+    # Appelé par Airflow après une promotion : le dossier models/ est partagé entre les conteneurs,
+    # il suffit donc de recharger les poids depuis le disque
+    try:
+        predictor.load()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Échec du rechargement du modèle : {e}")
+    return {
+        "status": "reloaded",
+        "labels": predictor.labels,
+        "thresholds": predictor.thresholds
+    }
+
 @api.get("/model/metrics")
 def model_metrics(limit: int = 1, api_key: str = Depends(get_api_key)):
     try:

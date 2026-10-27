@@ -74,5 +74,6 @@ L'API documente ses propres routes via Swagger : [http://127.0.0.1:8000/docs](ht
 - `GET /model/info` : Renvoie la configuration actuelle du modèle (labels, seuils optimisés, device).
 - `GET /model/metrics` : Renvoie les métriques de la dernière exécution MLflow (F1-score) depuis DagsHub.
 - `POST /predict` : Effectue une prédiction de classification sur une liste de textes.
+- `POST /model/reload` : Recharge le modèle depuis `models/camembert` sans redémarrer le serveur (appelé par Airflow après une promotion).
 
 > **Note d'authentification** : La plupart des routes sont protégées. Dans l'interface Swagger, cliquez sur le bouton vert **"Authorize"** et entrez la clé d'API (par défaut : `super_secret_token_trustpilot_2024`) pour pouvoir exécuter vos requêtes de test.

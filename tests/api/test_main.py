@@ -44,3 +44,29 @@ def test_predict_with_valid_api_key(mock_predict):
     
     # On vérifie que notre faux modèle a bien été appelé
     mock_predict.assert_called_once_with(["La livraison était super rapide et le produit est top !"])
+
+def test_reload_without_api_key_is_forbidden():
+    """Test de sécurité : le rechargement du modèle est réservé aux appels authentifiés"""
+    response = client.post("/model/reload")
+
+    assert response.status_code == 403
+
+@patch.object(predictor, "load")
+def test_reload_with_valid_api_key(mock_load):
+    headers = {"X-API-Key": API_KEY}
+
+    response = client.post("/model/reload", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "reloaded"
+
+    # On vérifie que le rechargement des poids a bien été déclenché
+    mock_load.assert_called_once()
+
+@patch.object(predictor, "load", side_effect=RuntimeError("poids introuvables"))
+def test_reload_failure_returns_500(mock_load):
+    headers = {"X-API-Key": API_KEY}
+
+    response = client.post("/model/reload", headers=headers)
+
+    assert response.status_code == 500

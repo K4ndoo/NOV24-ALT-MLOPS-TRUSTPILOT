@@ -204,5 +204,14 @@ def main():
     final_count = len(df)
     print(f"Scraping finished. {final_count - initial_count} new reviews added. Total reviews: {final_count}. Data saved.")
 
+    # bilan du scraping lu par le DAG Airflow pour décider s'il faut ré-entraîner (comme models/last_run_id.txt pour le run MLflow)
+    stats_path = f"data/last_scraping_{args.preset}.json"
+    with open(stats_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "new_reviews": final_count - initial_count,
+            "total_reviews": final_count,
+            "scraping_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }, f, indent=2)
+
 if __name__ == "__main__":
     main()
