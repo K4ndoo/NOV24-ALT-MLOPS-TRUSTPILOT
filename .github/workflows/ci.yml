@@ -33,7 +33,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+          uv venv
+          echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          uv pip install -r requirements.txt
 
       - name: Run tests
         run: |
