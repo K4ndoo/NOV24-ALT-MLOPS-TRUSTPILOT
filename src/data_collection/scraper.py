@@ -56,7 +56,41 @@ def main():
         initial_count = 0
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        # Lancement avec des arguments pour masquer l'automatisation
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-features=IsolateOrigins,site-per-process",
+                "--disable-site-isolation-trials",
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-infobars",
+                "--window-size=1920,1080",
+            ]
+        )
+
+        # Création d'un contexte réaliste
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            viewport={"width": 1920, "height": 1080},
+            locale="fr-FR",
+            timezone_id="Europe/Paris",
+            device_scale_factor=1,
+        )
+    
+        # Script d'injection pour masquer totalement navigator.webdriver
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            
+            // Simuler des plugins pour faire plus "vrai"
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+        """)
+
         page = browser.new_page()
 
         for company_info in COMPANIES:
