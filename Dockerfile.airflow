@@ -19,6 +19,9 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt \
     && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
+# playwright-stealth n'est utilisé que par le scraper : installé ici plutôt que dans requirements.txt (comme dans les workflows GitHub)
+RUN pip install --no-cache-dir playwright-stealth
+
 USER root
 # Installation des dépendances système Chromium via le binaire playwright de l'utilisateur airflow
 RUN PATH="/home/airflow/.local/bin:$PATH" playwright install-deps chromium
