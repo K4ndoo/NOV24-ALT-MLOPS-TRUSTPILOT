@@ -9,4 +9,6 @@ mlruns/
 kaggle/secrets.json
 kaggle_secrets_ds/
 data/daily_inference/
+reports/
+evidently_workspace/
 data/last_scraping_*.json

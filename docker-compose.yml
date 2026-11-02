@@ -3,6 +3,7 @@ version: '3.8'
 services:
   # FastAPI
   api:
+    image: ghcr.io/k4ndoo/nov24-alt-mlops-trustpilot-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -22,6 +23,7 @@ services:
 
   # Airflow
   airflow:
+    image: ghcr.io/k4ndoo/nov24-alt-mlops-trustpilot-airflow:latest
     build:
       context: .
       dockerfile: Dockerfile.airflow
@@ -36,6 +38,8 @@ services:
       - ./models:/opt/airflow/models
       - ./.dvc:/opt/airflow/.dvc
       - ./.git:/opt/airflow/.git
+      - ./evidently_workspace:/opt/airflow/evidently_workspace
+      - ./reports:/opt/airflow/reports
     # On initialise la base de données et on force la création de l'utilisateur admin/admin AVANT de lancer standalone
     command: >
       bash -c "
@@ -55,3 +59,13 @@ services:
       - API_KEY=${API_KEY}
     depends_on:
       - api
+
+  evidently:
+    build:
+      context: .
+      dockerfile: Dockerfile.evidently
+    container_name: trustpilot_evidently
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./evidently_workspace:/workspace

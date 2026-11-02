@@ -1,0 +1,9 @@
+FROM python:3.11-slim
+
+# Interface Evidently UI : affiche l'espace evidently_workspace/ rempli par src/monitoring/update_dashboard.py
+# pandas et numpy aux versions du projet : une version plus récente de pandas casse l'import d'Evidently 0.7.23
+RUN pip install --no-cache-dir evidently==0.7.23 pandas==3.0.3 numpy==2.4.6
+
+EXPOSE 8000
+
+CMD ["evidently", "ui", "--workspace", "/workspace", "--host", "0.0.0.0", "--port", "8000"]
