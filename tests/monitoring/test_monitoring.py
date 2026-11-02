@@ -81,7 +81,7 @@ def test_avis_anciens_exclus_des_fenetres():
 
 
 def test_notes_regroupees():
-    assert [star_group(s) for s in [1, 2, 3, 4, 5]] == ["1★", "2-4★", "2-4★", "2-4★", "5★"]
+    assert [star_group(s) for s in [1, 2, 3, 4, 5]] == ["1", "2-4", "2-4", "2-4", "5"]
 
 
 def test_tranches_de_longueur_calculees_sur_la_reference():
