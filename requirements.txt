@@ -69,3 +69,4 @@ pyOpenSSL>=24.0.0
 curl_cffi==0.7.3
 beautifulsoup4==4.12.3
 playwright
+evidently==0.7.23

@@ -50,3 +50,13 @@ services:
       - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
       - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+
+  evidently:
+    build:
+      context: .
+      dockerfile: Dockerfile.evidently
+    container_name: trustpilot_evidently
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./evidently_workspace:/workspace
