@@ -1,0 +1,49 @@
+[2026-11-01T21:56:17.269+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2026-11-01T21:56:17.287+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: trustpilot_retraining_pipeline.collect_new_trustpilot_reviews manual__2026-11-01T21:05:18+00:00 [queued]>
+[2026-11-01T21:56:17.292+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: trustpilot_retraining_pipeline.collect_new_trustpilot_reviews manual__2026-11-01T21:05:18+00:00 [queued]>
+[2026-11-01T21:56:17.293+0000] {taskinstance.py:2306} INFO - Starting attempt 2 of 2
+[2026-11-01T21:56:17.305+0000] {taskinstance.py:2330} INFO - Executing <Task(BashOperator): collect_new_trustpilot_reviews> on 2026-11-01 21:05:18+00:00
+[2026-11-01T21:56:17.310+0000] {standard_task_runner.py:63} INFO - Started process 79 to run task
+[2026-11-01T21:56:17.314+0000] {standard_task_runner.py:90} INFO - Running: ['airflow', 'tasks', 'run', 'trustpilot_retraining_pipeline', 'collect_new_trustpilot_reviews', 'manual__2026-11-01T21:05:18+00:00', '--job-id', '16', '--raw', '--subdir', 'DAGS_FOLDER/retrain_pipeline.py', '--cfg-path', '/tmp/tmpzm57y6vb']
+[2026-11-01T21:56:17.316+0000] {standard_task_runner.py:91} INFO - Job 16: Subtask collect_new_trustpilot_reviews
+[2026-11-01T21:56:17.360+0000] {task_command.py:426} INFO - Running <TaskInstance: trustpilot_retraining_pipeline.collect_new_trustpilot_reviews manual__2026-11-01T21:05:18+00:00 [running]> on host 172.18.0.6
+[2026-11-01T21:56:17.420+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Equipe_MLOps' AIRFLOW_CTX_DAG_ID='trustpilot_retraining_pipeline' AIRFLOW_CTX_TASK_ID='collect_new_trustpilot_reviews' AIRFLOW_CTX_EXECUTION_DATE='2026-11-01T21:05:18+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-01T21:05:18+00:00'
+[2026-11-01T21:56:17.420+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-11-01T21:56:17.439+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-11-01T21:56:17.440+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', 'cd /opt/airflow && python -u src/data_collection/scraper.py']
+[2026-11-01T21:56:17.447+0000] {subprocess.py:86} INFO - Output:
+[2026-11-01T21:56:19.978+0000] {subprocess.py:93} INFO - Scraping company: ShowRoom
+[2026-11-01T21:56:19.978+0000] {subprocess.py:93} INFO -   [Init] Chargement de la page principale pour les cookies (https://fr.trustpilot.com/review/www.showroomprive.com)...
+[2026-11-01T21:56:25.720+0000] {subprocess.py:93} INFO -   Scraping topic: service client
+[2026-11-01T21:56:25.720+0000] {subprocess.py:93} INFO -   Sleeping for 14.35 seconds...
+[2026-11-01T21:56:40.068+0000] {subprocess.py:93} INFO -   Fetching https://fr.trustpilot.com/review/www.showroomprive.com?topics=customer_service...
+[2026-11-01T21:56:42.885+0000] {subprocess.py:93} INFO -   All reviews on this page were already in the original dataset. Stopping pagination.
+[2026-11-01T21:56:42.885+0000] {subprocess.py:93} INFO -   Scraping topic: service livraison
+[2026-11-01T21:56:42.885+0000] {subprocess.py:93} INFO -   Sleeping for 11.73 seconds...
+[2026-11-01T21:56:54.611+0000] {subprocess.py:93} INFO -   Fetching https://fr.trustpilot.com/review/www.showroomprive.com?topics=delivery_service...
+[2026-11-01T21:56:57.407+0000] {subprocess.py:93} INFO -   All reviews on this page were already in the original dataset. Stopping pagination.
+[2026-11-01T21:56:57.407+0000] {subprocess.py:93} INFO -   Scraping topic: qualité produit
+[2026-11-01T21:56:57.407+0000] {subprocess.py:93} INFO -   Sleeping for 11.37 seconds...
+[2026-11-01T21:57:08.779+0000] {subprocess.py:93} INFO -   Fetching https://fr.trustpilot.com/review/www.showroomprive.com?topics=product...
+[2026-11-01T21:57:11.516+0000] {subprocess.py:93} INFO -   All reviews on this page were already in the original dataset. Stopping pagination.
+[2026-11-01T21:57:11.516+0000] {subprocess.py:93} INFO - Scraping company: VeePee
+[2026-11-01T21:57:11.516+0000] {subprocess.py:93} INFO -   [Init] Chargement de la page principale pour les cookies (https://fr.trustpilot.com/review/www.veepee.fr)...
+[2026-11-01T21:57:16.703+0000] {subprocess.py:93} INFO -   Scraping topic: service client
+[2026-11-01T21:57:16.704+0000] {subprocess.py:93} INFO -   Sleeping for 11.39 seconds...
+[2026-11-01T21:57:28.092+0000] {subprocess.py:93} INFO -   Fetching https://fr.trustpilot.com/review/www.veepee.fr?topics=customer_service...
+[2026-11-01T21:57:30.812+0000] {subprocess.py:93} INFO -   All reviews on this page were already in the original dataset. Stopping pagination.
+[2026-11-01T21:57:30.812+0000] {subprocess.py:93} INFO -   Scraping topic: service livraison
+[2026-11-01T21:57:30.812+0000] {subprocess.py:93} INFO -   Sleeping for 13.51 seconds...
+[2026-11-01T21:57:44.318+0000] {subprocess.py:93} INFO -   Fetching https://fr.trustpilot.com/review/www.veepee.fr?topics=delivery_service...
+[2026-11-01T21:57:46.856+0000] {subprocess.py:93} INFO -   All reviews on this page were already in the original dataset. Stopping pagination.
+[2026-11-01T21:57:46.856+0000] {subprocess.py:93} INFO -   Scraping topic: qualité produit
+[2026-11-01T21:57:46.857+0000] {subprocess.py:93} INFO -   Sleeping for 9.83 seconds...
+[2026-11-01T21:57:56.687+0000] {subprocess.py:93} INFO -   Fetching https://fr.trustpilot.com/review/www.veepee.fr?topics=product...
+[2026-11-01T21:57:59.280+0000] {subprocess.py:93} INFO -   All reviews on this page were already in the original dataset. Stopping pagination.
+[2026-11-01T21:57:59.425+0000] {subprocess.py:93} INFO - Scraping finished. 0 new reviews added. Total reviews: 4155. Data saved.
+[2026-11-01T21:57:59.555+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-11-01T21:57:59.556+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-11-01T21:57:59.574+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=trustpilot_retraining_pipeline, task_id=collect_new_trustpilot_reviews, run_id=manual__2026-11-01T21:05:18+00:00, execution_date=20261101T210518, start_date=20261101T215617, end_date=20261101T215759
+[2026-11-01T21:57:59.605+0000] {local_task_job_runner.py:240} INFO - Task exited with return code 0
+[2026-11-01T21:57:59.621+0000] {taskinstance.py:3503} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-11-01T21:57:59.626+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
