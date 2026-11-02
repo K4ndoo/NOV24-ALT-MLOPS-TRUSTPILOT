@@ -114,8 +114,6 @@ python-dateutil==2.9.0.post0
 # 11. TESTS
 # ============================================================
 pytest
-<<<<<<< HEAD
-=======
 httpx
 protobuf<5.0.0
 SQLAlchemy<2.0.0
@@ -127,4 +125,3 @@ curl_cffi==0.7.3
 beautifulsoup4==4.12.3
 playwright
 evidently==0.7.23
->>>>>>> origin/main
