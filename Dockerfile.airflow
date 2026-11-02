@@ -1,34 +1,31 @@
-
 FROM apache/airflow:2.9.2
 
 USER root
 
+# installation des dépendances système 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends \
+         build-essential \
+  && apt-get autoremove -yqq --purge \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 USER airflow
 
-COPY --chown=airflow:root requirements.txt /tmp/requirements.txt
+# Copie des requirements
+COPY requirements.txt /tmp/requirements.txt
 
-RUN python -m pip install \
-        --no-cache-dir \
-        --retries 5 \
-        --timeout 120 \
-        -r /tmp/requirements.txt \
-    && python -m pip install \
-        --no-cache-dir \
-        --retries 5 \
-        --timeout 120 \
-        torch \
-        --index-url https://download.pytorch.org/whl/cpu
+# Installation des librairies Python (on ajoute aussi la version CPU de PyTorch pour que le script de train tourne sans GPU)
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# playwright-stealth n'est utilisé que par le scraper : installé ici plutôt que dans requirements.txt (comme dans les workflows GitHub)
+RUN pip install --no-cache-dir playwright-stealth
 
 USER root
-
-RUN PATH="/home/airflow/.local/bin:$PATH" \
-    playwright install-deps chromium
+# Installation des dépendances système Chromium via le binaire playwright de l'utilisateur airflow
+RUN PATH="/home/airflow/.local/bin:$PATH" playwright install-deps chromium
 
 USER airflow
-
+# Installation des navigateurs
 RUN playwright install chromium

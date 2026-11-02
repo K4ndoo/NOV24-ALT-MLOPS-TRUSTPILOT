@@ -1,91 +1,34 @@
+version: '3.8'
+
 services:
-
-  # ============================================================
   # FastAPI
-  # ============================================================
-
   api:
     build:
       context: .
       dockerfile: Dockerfile.api
-
-    container_name: trustpilotapi
-
+    container_name: trustpilot_api
     ports:
       - "8000:8000"
-
     volumes:
       - ./src:/app/src
       - ./.env:/app/.env
       - ./models:/app/models
       - ./.dvc:/app/.dvc
       - ./.git:/app/.git
-
     environment:
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
-      MLFLOW_TRACKING_USERNAME: ${MLFLOW_TRACKING_USERNAME}
-      MLFLOW_TRACKING_PASSWORD: ${MLFLOW_TRACKING_PASSWORD}
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
 
-    restart: unless-stopped
-
-
-  # ============================================================
-  # Airflow Init
-  # ============================================================
-
-  airflow-init:
+  # Airflow
+  airflow:
     build:
       context: .
       dockerfile: Dockerfile.airflow
-
-    container_name: trustpilotairflow_init
-
-    volumes:
-      - airflow_data:/opt/airflow
-      - ./src:/opt/airflow/src
-      - ./dags:/opt/airflow/dags
-      - ./data:/opt/airflow/data
-      - ./.env:/opt/airflow/.env
-      - ./models:/opt/airflow/models
-      - ./.dvc:/opt/airflow/.dvc
-      - ./.git:/opt/airflow/.git
-
-    environment:
-      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
-      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
-      MLFLOW_TRACKING_USERNAME: ${MLFLOW_TRACKING_USERNAME}
-      MLFLOW_TRACKING_PASSWORD: ${MLFLOW_TRACKING_PASSWORD}
-
-    command: >
-      bash -c "
-      airflow db migrate &&
-      airflow users create
-      --username admin
-      --password admin
-      --firstname Admin
-      --lastname User
-      --role Admin
-      --email admin@example.com
-      "
-
-
-  # ============================================================
-  # Airflow Webserver
-  # ============================================================
-
-  airflow-webserver:
-    build:
-      context: .
-      dockerfile: Dockerfile.airflow
-
-    container_name: trustpilotairflow_webserver
-
+    container_name: trustpilot_airflow
     ports:
       - "8080:8080"
-
     volumes:
-      - airflow_data:/opt/airflow
       - ./src:/opt/airflow/src
       - ./dags:/opt/airflow/dags
       - ./data:/opt/airflow/data
@@ -93,110 +36,22 @@ services:
       - ./models:/opt/airflow/models
       - ./.dvc:/opt/airflow/.dvc
       - ./.git:/opt/airflow/.git
-
+    # On initialise la base de données et on force la création de l'utilisateur admin/admin AVANT de lancer standalone
+    command: >
+      bash -c "
+      airflow db migrate && 
+      airflow users create -u admin -p admin -f Admin -l User -r Admin -e admin@example.com || true && 
+      airflow standalone
+      "
     environment:
-      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
-      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
-      MLFLOW_TRACKING_USERNAME: ${MLFLOW_TRACKING_USERNAME}
-      MLFLOW_TRACKING_PASSWORD: ${MLFLOW_TRACKING_PASSWORD}
-
-    command: airflow webserver
-
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+      # Adresse de l'API vue depuis le conteneur Airflow (nom du service docker-compose)
+      - API_URL=http://api:8000
+      - API_KEY=${API_KEY}
     depends_on:
-      airflow-init:
-        condition: service_completed_successfully
-
-    restart: unless-stopped
-
-
-  # ============================================================
-  # Airflow Scheduler
-  # ============================================================
-
-  airflow-scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile.airflow
-
-    container_name: trustpilotairflow_scheduler
-
-    volumes:
-      - airflow_data:/opt/airflow
-      - ./src:/opt/airflow/src
-      - ./dags:/opt/airflow/dags
-      - ./data:/opt/airflow/data
-      - ./.env:/opt/airflow/.env
-      - ./models:/opt/airflow/models
-      - ./.dvc:/opt/airflow/.dvc
-      - ./.git:/opt/airflow/.git
-
-    environment:
-      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
-      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
-      MLFLOW_TRACKING_USERNAME: ${MLFLOW_TRACKING_USERNAME}
-      MLFLOW_TRACKING_PASSWORD: ${MLFLOW_TRACKING_PASSWORD}
-
-    command: airflow scheduler
-
-    depends_on:
-      airflow-init:
-        condition: service_completed_successfully
-
-    restart: unless-stopped
-
-
-  # ============================================================
-  # Prometheus
-  # ============================================================
-
-  prometheus:
-    image: prom/prometheus:latest
-
-    container_name: trustpilotprometheus
-
-    ports:
-      - "9090:9090"
-
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-
-    restart: unless-stopped
-
-
-  # ============================================================
-  # Grafana
-  # ============================================================
-
-  grafana:
-    image: grafana/grafana:latest
-
-    container_name: trustpilotgrafana
-
-    ports:
-      - "3000:3000"
-
-    volumes:
-      - grafana_data:/var/lib/grafana
-
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: "false"
-
-    depends_on:
-      - prometheus
-
-    restart: unless-stopped
-
-
-# ============================================================
-# Persistent volumes
-# ============================================================
-
-volumes:
-  airflow_data:
-  prometheus_data:
-  grafana_data:
+      - api
