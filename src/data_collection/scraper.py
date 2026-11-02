@@ -6,6 +6,7 @@ import os
 import argparse
 from datetime import datetime
 from playwright.sync_api import sync_playwright
+from playwright_stealth import Stealth
 from bs4 import BeautifulSoup
 
 # nos topics
@@ -55,9 +56,26 @@ def main():
         previously_existing_ids = set()
         initial_count = 0
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+    with Stealth().use_sync(sync_playwright()) as p:
+        # Lancement avec des arguments pour masquer l'automatisation
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--window-size=1920,1080",
+            ]
+        )
+
+        # Création d'un contexte réaliste
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            viewport={"width": 1920, "height": 1080},
+            locale="fr-FR",
+        )
+
+        page = context.new_page()
 
         for company_info in COMPANIES:
             domain = company_info['domain']
@@ -127,7 +145,7 @@ def main():
                     for r in reviews:
                         c_id = str(r.get('id', ''))
                         text = r.get('text', '')
-                        
+
                         # On ignore les avis sans texte
                         if not c_id or not text or str(text).strip() == "":
                             continue
@@ -203,6 +221,15 @@ def main():
     df.to_csv(DATASET_PATH, index=False)
     final_count = len(df)
     print(f"Scraping finished. {final_count - initial_count} new reviews added. Total reviews: {final_count}. Data saved.")
+
+    # bilan du scraping lu par le DAG Airflow pour décider s'il faut ré-entraîner (comme models/last_run_id.txt pour le run MLflow)
+    stats_path = f"data/last_scraping_{args.preset}.json"
+    with open(stats_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "new_reviews": final_count - initial_count,
+            "total_reviews": final_count,
+            "scraping_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }, f, indent=2)
 
 if __name__ == "__main__":
     main()

@@ -107,11 +107,23 @@ def main():
     current_best_f1 = get_current_best_f1()
     is_better = current_best_f1 is None or test_f1_micro > current_best_f1
 
-    with mlflow.start_run(run_id=run.info.run_id):
-        mlflow.set_tag("promoted", "true" if is_better else "false")
+    # un modèle FAST_TRACK (50 exemples, 1 epoch) sert uniquement à la démo :
+    # on ne le promeut que si on l'autorise explicitement (paramètre du DAG Airflow)
+    is_fast_track = run.data.tags.get("fast_track") == "true"
+    allow_fast_track = os.getenv("ALLOW_FAST_TRACK_PROMOTION", "false").lower() == "true"
+    blocked_fast_track = is_fast_track and not allow_fast_track
+    should_promote = is_better and not blocked_fast_track
 
-    if is_better:
+    with mlflow.start_run(run_id=run.info.run_id):
+        mlflow.set_tag("promoted", "true" if should_promote else "false")
+
+    if should_promote:
         promote(run.info.run_id, test_f1_micro)
+    elif blocked_fast_track:
+        print(
+            f"\nModèle candidat NON retenu : entraîné en mode FAST_TRACK (démo), F1 micro {test_f1_micro:.3f}. "
+            f"Mettre ALLOW_FAST_TRACK_PROMOTION=true pour autoriser sa promotion. '{OUTPUT_DIR}' reste inchangé."
+        )
     else:
         print(
             f"\nModèle candidat NON retenu : F1 micro {test_f1_micro:.3f} <= modèle actuel ({current_best_f1:.3f}). "

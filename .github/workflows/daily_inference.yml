@@ -2,19 +2,19 @@ name: Daily Inference Pipeline
 
 on:
   schedule:
-    - cron: '14 8 * * *' # Tous les jours vers 8h14 du matin
+    - cron: "14 8 * * *" # Tous les jours vers 8h14 du matin
   workflow_dispatch: # Pour le lancer manuellement
 
 jobs:
   inference:
     runs-on: ubuntu-latest
-    
+
     # On définit les variables d'environnement depuis les secrets GitHub
     env:
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
       MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
       MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
-      
+
     steps:
       - name: Libérer de l'espace disque
         uses: jlumbroso/free-disk-space@main
@@ -23,50 +23,54 @@ jobs:
           android: true
           dotnet: true
           haskell: true
-          large-packages: false
+          large-packages: true
           docker-images: true
           swap-storage: true
-          
+
       - name: Récupérer le code
         uses: actions/checkout@v4
-        
+
       - name: Installer Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
+          python-version: "3.11"
+
       - name: Installer les dépendances
-        # Pour l'inférence, on a besoin de PyTorch et Transformers, on installe donc le requirements
+        env:
+          TMPDIR: ${{ runner.temp }}
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          
-      - name: Installer Playwright (Navigateur)
-        run: playwright install chromium
-        
+          pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+
+      - name: Install Playwright Browsers
+        run: |
+          pip install playwright playwright-stealth
+          playwright install chromium
+          playwright install-deps chromium
+
       - name: Configurer DVC
         run: |
           # DVC a besoin des identifiants pour télécharger le modèle
           dvc remote modify origin --local user ${{ secrets.MLFLOW_TRACKING_USERNAME }}
           dvc remote modify origin --local password ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
-          
+
       - name: DVC Pull (Récupérer le dernier modèle)
         run: |
           dvc pull models/camembert.dvc
           dvc pull data/daily_inference.dvc
-        
+
       - name: 1. Scraper de nouvelles données
         run: python -u src/data_collection/scraper.py --preset inference
-        
       - name: 2. Inférence & Shadow Evaluation
         run: python -u src/modelisation/daily_inference.py
-        
+
       - name: Sauvegarder les données quotidiennes sur DagsHub
         run: |
           # On ajoute le nouveau CSV du jour à DVC
           dvc add data/daily_inference/
           dvc push
-          
+
           # On sauvegarde le point de référence DVC sur GitHub
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"

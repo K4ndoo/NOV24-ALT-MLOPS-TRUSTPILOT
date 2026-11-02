@@ -49,7 +49,11 @@ services:
       - _AIRFLOW_WWW_USER_PASSWORD=admin
       - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
-      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+      # Adresse de l'API vue depuis le conteneur Airflow (nom du service docker-compose)
+      - API_URL=http://api:8000
+      - API_KEY=${API_KEY}
+    depends_on:
+      - api
 
   evidently:
     build:
