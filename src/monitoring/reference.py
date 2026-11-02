@@ -30,14 +30,14 @@ def _git(*args):
     return result.stdout.strip()
 
 
-def list_promotions():
-    """Promotions du modèle, de la plus récente à la plus ancienne."""
+def list_promotions(rev="HEAD"):
+    """Promotions du modèle visibles depuis `rev`, de la plus récente à la plus ancienne."""
     if _git("rev-parse", "--is-shallow-repository") == "true":
         raise RuntimeError(
             "Historique git tronqué (clone superficiel) : impossible de retrouver les références. "
             "En CI, utiliser actions/checkout avec fetch-depth: 0."
         )
-    lines = _git("log", "--format=%H|%h|%ad|%aI|%s", "--date=short", "--", MODEL_DVC).splitlines()
+    lines = _git("log", "--format=%H|%h|%ad|%aI|%s", "--date=short", rev, "--", MODEL_DVC).splitlines()
     promotions = []
     for line in lines:
         commit, short, day, iso, subject = line.split("|", 4)
