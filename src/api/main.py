@@ -122,7 +122,7 @@ async def lifespan(app: FastAPI):
 
 
 api = FastAPI(
-    title="API de classification de reviews TrustPilot",
+    title="API de classification des avis TrustPilot",
     lifespan=lifespan
 )
 
