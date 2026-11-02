@@ -3,6 +3,7 @@ version: '3.8'
 services:
   # FastAPI
   api:
+    image: ghcr.io/k4ndoo/nov24-alt-mlops-trustpilot-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -22,6 +23,7 @@ services:
 
   # Airflow
   airflow:
+    image: ghcr.io/k4ndoo/nov24-alt-mlops-trustpilot-airflow:latest
     build:
       context: .
       dockerfile: Dockerfile.airflow
