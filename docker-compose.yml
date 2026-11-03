@@ -71,6 +71,23 @@ services:
     volumes:
       - ./evidently_workspace:/workspace
 
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: trustpilot_streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data:ro
+      - ./.env:/app/.env
+    environment:
+      - API_URL=http://api:8000
+      - API_KEY=${API_KEY}
+    depends_on:
+      - api
+
 # ============================================================
   # Prometheus
   # ============================================================

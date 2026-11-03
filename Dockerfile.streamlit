@@ -1,0 +1,19 @@
+FROM python:3.12-slim
+
+# on empêche Python de générer des fichiers .pyc et on force l'affichage des logs
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# image légère : la démo ne fait qu'appeler l'API, pas besoin de torch ni de transformers
+RUN pip install --no-cache-dir streamlit==1.50.0 pandas requests==2.34.2 python-dotenv
+
+# On copie le code (monté en volume par docker-compose pour le développement)
+COPY src ./src
+
+# on expose le port 8501 pour Streamlit
+EXPOSE 8501
+
+# Commande de lancement de la démo (toolbarMode=viewer : masque le bouton Deploy et le menu développeur)
+CMD ["streamlit", "run", "src/demo/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501", "--client.toolbarMode=viewer"]

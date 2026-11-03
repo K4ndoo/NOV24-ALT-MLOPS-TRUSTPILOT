@@ -1,6 +1,8 @@
 
 import os
 import time
+import random
+import argparse
 import uuid
 import logging
 from pathlib import Path
@@ -21,12 +23,17 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 # API FastAPI
-API_URL = "http://localhost:8000/predict"
+API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/") + "/predict"
 API_KEY = os.getenv("API_KEY")
 
 # Dataset d'inférence
 INPUT_FILE = (
     BASE_DIR / "data/daily_inference/dataset_inference.csv"
+)
+
+# Dataset d'entraînement
+TRAIN_FILE = (
+    BASE_DIR / "data/labelled_dataset/dataset_avis.csv"
 )
 
 # Résultats des prédictions
@@ -134,12 +141,12 @@ def check_api_health():
 # ============================================================
 
 
-def load_dataset():
+def load_dataset(input_file=INPUT_FILE):
 
-    logger.info("Chargement du dataset d'inférence...")
+    logger.info("Chargement du dataset : %s", input_file)
 
     df = pd.read_csv(
-        INPUT_FILE,
+        input_file,
         sep=None,
         engine="python"
     )
@@ -524,14 +531,162 @@ def run_inference():
 
 
 # ============================================================
-# 11. EXECUTION
+# 11. SIMULATION DE TRAFIC
+# ============================================================
+
+SIMULATION_SOURCES = {
+    "train": [TRAIN_FILE],
+    "inference": [INPUT_FILE],
+    "all": [TRAIN_FILE, INPUT_FILE]
+}
+
+
+def load_simulation_texts(source):
+
+    texts = []
+
+    for input_file in SIMULATION_SOURCES[source]:
+
+        if not input_file.exists():
+            logger.warning("Dataset introuvable, ignoré : %s", input_file)
+            continue
+
+        texts.extend(load_dataset(input_file)[TEXT_COL].tolist())
+
+    if not texts:
+        raise FileNotFoundError(
+            f"Aucun avis disponible pour la source '{source}'."
+        )
+
+    return texts
+
+
+def run_simulation(interval, batch_size, source):
+
+    # Envoie en boucle des avis tirés au hasard vers l'API, sans rien sauvegarder :
+    # le but est uniquement de générer du trafic visible dans Prometheus / Grafana
+
+    if not API_KEY:
+        raise ValueError(
+            "API_KEY introuvable dans le fichier .env"
+        )
+
+    texts = load_simulation_texts(source)
+
+    logger.info("=" * 60)
+    logger.info("DEMARRAGE DE LA SIMULATION DE TRAFIC")
+    logger.info("API : %s", API_URL)
+    logger.info("SOURCE : %s (%d avis)", source, len(texts))
+    logger.info("INTERVALLE : %.1f s | AVIS PAR REQUETE : %d", interval, batch_size)
+    logger.info("=" * 60)
+
+    tick = 0
+
+    with requests.Session() as session:
+
+        while True:
+
+            tick += 1
+            tick_start = time.time()
+            batch = random.sample(texts, min(batch_size, len(texts)))
+
+            try:
+
+                predictions = predict_batch(session, batch)
+
+                labels = [
+                    label
+                    for label, values in predictions[0].items()
+                    if values["prediction"] == 1
+                ]
+
+                logger.info(
+                    "Requête %d : %d avis prédits en %.2f s | 1er avis -> %s",
+                    tick,
+                    len(batch),
+                    time.time() - tick_start,
+                    ", ".join(labels) or "aucune catégorie"
+                )
+
+            except (
+                requests.RequestException,
+                ValueError,
+                KeyError,
+                TypeError
+            ) as error:
+
+                logger.error(
+                    "Requête %d en échec : %s",
+                    tick,
+                    error
+                )
+
+            time.sleep(
+                max(0.0, interval - (time.time() - tick_start))
+            )
+
+
+def parse_args():
+
+    parser = argparse.ArgumentParser(
+        description="Prédictions automatiques via l'API FastAPI."
+    )
+
+    parser.add_argument(
+        "--simulate",
+        action="store_true",
+        help="Envoie des avis aléatoires à intervalle régulier (au lieu du traitement batch)."
+    )
+
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=10.0,
+        help="Secondes entre deux requêtes (mode simulation)."
+    )
+
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=1,
+        help="Nombre d'avis envoyés par requête (mode simulation)."
+    )
+
+    parser.add_argument(
+        "--source",
+        choices=list(SIMULATION_SOURCES),
+        default="all",
+        help="Dataset d'où sont tirés les avis (mode simulation)."
+    )
+
+    return parser.parse_args()
+
+
+# ============================================================
+# 12. LANCEMENT
 # ============================================================
 
 if __name__ == "__main__":
 
+    args = parse_args()
+
     try:
 
-        run_inference()
+        if args.simulate:
+
+            run_simulation(
+                args.interval,
+                args.batch_size,
+                args.source
+            )
+
+        else:
+
+            run_inference()
+
+    except KeyboardInterrupt:
+
+        logger.info("Arrêt demandé par l'utilisateur.")
 
     except Exception:
 
