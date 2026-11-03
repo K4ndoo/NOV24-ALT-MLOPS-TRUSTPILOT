@@ -91,6 +91,21 @@ ACTIVE_PREDICTIONS = Gauge(
     "Nombre de prédictions actuellement en cours",
 )
 
+INFERENCE_PREDICTED_REVIEWS = Counter(
+    "inference_predicted_reviews_total",
+    "Nombre d'avis prédits avec succès"
+)
+
+INFERENCE_FAILED_REVIEWS = Counter(
+    "inference_failed_reviews_total",
+    "Nombre d'avis dont la prédiction a échoué"
+)
+
+INFERENCE_REVIEW_LENGTH = Histogram(
+    "inference_review_length_characters",
+    "Longueur des avis envoyés au modèle",
+    buckets=(50, 100, 200, 300, 500, 1000, 2000)
+)
 
 # ------------------------------------------------------------
 # LIFESPAN
@@ -157,15 +172,23 @@ def predict(
     api_key: str = Depends(get_api_key)
 ):
 
+    # Métriques existantes
     PREDICTION_REQUESTS.inc()
     PREDICTION_TEXTS.inc(len(request.texts))
     ACTIVE_PREDICTIONS.inc()
 
     try:
 
+        # Temps de prédiction
         with PREDICTION_LATENCY.time():
 
             predictions = predictor.predict(request.texts)
+
+        # Nouvelles métriques
+        INFERENCE_PREDICTED_REVIEWS.inc(len(request.texts))
+
+        for text in request.texts:
+            INFERENCE_REVIEW_LENGTH.observe(len(text))
 
         return {
             "predictions": predictions
@@ -174,6 +197,8 @@ def predict(
     except Exception:
 
         PREDICTION_ERRORS.inc()
+        INFERENCE_FAILED_REVIEWS.inc(len(request.texts))
+
         raise
 
     finally:
