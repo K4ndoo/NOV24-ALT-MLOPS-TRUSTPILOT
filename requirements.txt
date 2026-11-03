@@ -58,6 +58,7 @@ xxhash==3.7.0
 # ============================================================
 mlflow
 dvc
+SQLAlchemy<2.0.0
 
 # ============================================================
 # 6. SCRAPING WEB ET NAVIGATEUR
@@ -70,6 +71,7 @@ curl_cffi==0.7.3
 # 7. MONITORING
 # ============================================================
 prometheus-client
+evidently==0.7.23
 
 # ============================================================
 # 8. SECURITE ET PROTOCOLES HTTP
@@ -99,8 +101,6 @@ fsspec==2026.4.0
 # 10. UTILITAIRES, AFFICHAGE ET COMPATIBILITE
 # ============================================================
 attrs==26.1.0
-beautifulsoup4==4.12.3
-filelock==3.29.1
 markdown-it-py==4.2.0
 mdurl==0.1.2
 Pygments==2.20.0
@@ -114,14 +114,3 @@ python-dateutil==2.9.0.post0
 # 11. TESTS
 # ============================================================
 pytest
-httpx
-protobuf<5.0.0
-SQLAlchemy<2.0.0
-accelerate>=1.1.0
-python-dotenv
-setuptools<81
-pyOpenSSL>=24.0.0
-curl_cffi==0.7.3
-beautifulsoup4==4.12.3
-playwright
-evidently==0.7.23
