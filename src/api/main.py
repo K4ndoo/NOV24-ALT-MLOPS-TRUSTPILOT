@@ -1,6 +1,6 @@
 # imports
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi import FastAPI, Depends, HTTPException, Request, Security
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.status import HTTP_403_FORBIDDEN
@@ -156,6 +156,27 @@ api.add_middleware(
 
 
 # ------------------------------------------------------------
+# COMPTAGE DES ERREURS /predict
+# ------------------------------------------------------------
+
+@api.middleware("http")
+async def count_prediction_errors(request: Request, call_next):
+    if request.url.path != "/predict":
+        return await call_next(request)
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        PREDICTION_ERRORS.inc()
+        raise
+
+    if response.status_code >= 400:
+        PREDICTION_ERRORS.inc()
+
+    return response
+
+
+# ------------------------------------------------------------
 # ROUTES
 # ------------------------------------------------------------
 
@@ -196,7 +217,6 @@ def predict(
 
     except Exception:
 
-        PREDICTION_ERRORS.inc()
         INFERENCE_FAILED_REVIEWS.inc(len(request.texts))
 
         raise
