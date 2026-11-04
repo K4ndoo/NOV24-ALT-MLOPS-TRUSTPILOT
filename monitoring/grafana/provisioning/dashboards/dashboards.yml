@@ -1,0 +1,11 @@
+# Charge automatiquement  les dashboards JSON de grafana
+apiVersion: 1
+
+providers:
+  - name: trustpilot
+    folder: Trustpilot
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
